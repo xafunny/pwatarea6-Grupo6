@@ -213,12 +213,18 @@ function guardar_usuario(array $datos, ?int $id = null): int
 
 /**
  * Elimina un usuario. Devuelve:
- * 'propio' si intenta borrarse a sí mismo, 'tiene_pedidos' si tiene pedidos (la FK no lo permite) u 'ok'.
+ * 'propio' si intenta borrarse a sí mismo, 'no_existe' si el id no es de ningún usuario,
+ * 'tiene_pedidos' si tiene pedidos (la FK no lo permite) u 'ok'.
  */
 function eliminar_usuario(int $id, int $id_actual): string
 {
     if ($id === $id_actual) {
         return 'propio';
+    }
+    $st = conectar()->prepare('SELECT COUNT(*) FROM users WHERE id = ?');
+    $st->execute([$id]);
+    if ((int) $st->fetchColumn() === 0) {
+        return 'no_existe';
     }
     $st = conectar()->prepare('SELECT COUNT(*) FROM orders WHERE user_id = ?');
     $st->execute([$id]);

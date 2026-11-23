@@ -316,4 +316,55 @@ comprobar('pedidos_de_camarero solo trae pedidos del camarero', $solo_suyos);
 comprobar('pedidos_de_camarero trae plato, cliente y minutos',
     isset($mios_camarero[0]['plato'], $mios_camarero[0]['cliente'], $mios_camarero[0]['minutos']));
 
+// ---- Administrador: estadísticas, listado con filtros y eliminar ----
+$stats = estadisticas_admin();
+comprobar('estadisticas_admin trae las 6 claves',
+    array_keys($stats) === ['pedidos_hoy', 'en_cocina', 'ingresos', 'platos_activos', 'por_estado', 'top_platos']);
+comprobar('estadisticas_admin: contadores enteros e ingresos float',
+    is_int($stats['pedidos_hoy']) && is_int($stats['en_cocina']) && is_int($stats['platos_activos']) && is_float($stats['ingresos']));
+comprobar('estadisticas_admin: por_estado tiene los 4 estados en orden', array_keys($stats['por_estado']) === ESTADOS);
+comprobar('estadisticas_admin: en_cocina = Pending + Preparing',
+    $stats['en_cocina'] === $stats['por_estado']['Pending'] + $stats['por_estado']['Preparing']);
+comprobar('estadisticas_admin: por_estado suma el total de pedidos', array_sum($stats['por_estado']) === contar_pedidos());
+comprobar('estadisticas_admin: hay pedidos de hoy (los de esta prueba)', $stats['pedidos_hoy'] > 0);
+comprobar('estadisticas_admin: top_platos tiene hasta 5 con nombre, unidades e imagen',
+    count($stats['top_platos']) > 0 && count($stats['top_platos']) <= 5
+    && array_key_exists('imagen', $stats['top_platos'][0]) && isset($stats['top_platos'][0]['nombre'])
+    && is_int($stats['top_platos'][0]['unidades']));
+$unidades = array_column($stats['top_platos'], 'unidades');
+$ordenadas = $unidades;
+rsort($ordenadas);
+comprobar('estadisticas_admin: top_platos va de más a menos unidades', $unidades === $ordenadas);
+
+$todos = todos_los_pedidos();
+comprobar('todos_los_pedidos trae plato, cliente, email, camarero y subtotal',
+    isset($todos[0]['plato'], $todos[0]['cliente'], $todos[0]['email'], $todos[0]['subtotal']) && array_key_exists('camarero', $todos[0]));
+comprobar('todos_los_pedidos va del más nuevo al más viejo',
+    count($todos) < 2 || $todos[0]['created_at'] >= $todos[count($todos) - 1]['created_at']);
+comprobar('todos_los_pedidos con 200 como máximo', count($todos) <= 200);
+$solo_listos_admin = todos_los_pedidos('Ready to serve');
+comprobar('todos_los_pedidos filtra por estado',
+    count($solo_listos_admin) > 0 && count(array_unique(array_column($solo_listos_admin, 'status'))) === 1
+    && $solo_listos_admin[0]['status'] === 'Ready to serve');
+comprobar('todos_los_pedidos ignora un estado inválido', count(todos_los_pedidos('Borrado')) === count($todos));
+$por_email = todos_los_pedidos(null, 'cliente@ebano');
+comprobar('todos_los_pedidos busca por email del cliente',
+    count($por_email) > 0 && in_array($id_libre, array_map('intval', array_column($por_email, 'id')), true));
+$nombre_plato_1 = (string) $pdo->query('SELECT name FROM dishes WHERE id = 1')->fetchColumn();
+$por_plato = todos_los_pedidos(null, $nombre_plato_1);
+comprobar('todos_los_pedidos busca por nombre del plato',
+    count($por_plato) > 0 && count(array_unique(array_column($por_plato, 'plato'))) === 1);
+comprobar('todos_los_pedidos combina estado y búsqueda',
+    count(todos_los_pedidos('Served', 'cliente@ebano')) <= count($por_email));
+comprobar('buscar "%" no coincide con todo (se escapa el comodín)', count(todos_los_pedidos(null, '%')) === 0);
+comprobar('buscar "_" no coincide con todo (se escapa el comodín)', count(todos_los_pedidos(null, '_')) === 0);
+
+comprobar('eliminar_pedido de un pedido existente es true', eliminar_pedido($id_servido_viejo) === true);
+comprobar('el pedido eliminado ya no existe', fila_pedido($id_servido_viejo) === []);
+comprobar('eliminar_pedido de un id inexistente es false', eliminar_pedido(99999999) === false);
+
+// El admin puede llevar un pedido a cualquier estado (incluso hacia atrás)
+$admin = ['id' => id_por_email('admin@ebano.com'), 'role' => 'Administrator'];
+comprobar('el admin puede pasar de Served a Pending', cambiar_estado($id_servido_hoy, 'Pending', $admin) === true);
+
 exit($fallos > 0 ? 1 : 0);

@@ -6,7 +6,8 @@
  * Ofrece: leer el carrito del formulario (items_desde_post), crear pedidos (con validación y transacción), listar los pedidos de un cliente,
  * listar las comandas de la cocina (pedidos_cocina) y cambiar el estado de un pedido respetando la tabla de transiciones por rol.
  * Para el camarero: sus pedidos, los sin asignar, los listos para servir y tomar_pedido().
- * Las Tasks del chef, el camarero y el admin agregan aquí sus propias consultas.
+ * Para el administrador: estadisticas_admin() (sala de control), todos_los_pedidos() con filtros
+ * y eliminar_pedido().
  */
 
 require_once __DIR__ . '/db.php';
@@ -341,4 +342,109 @@ function cambiar_estado(int $pedido_id, string $nuevo, array $usuario): bool
     }
 
     return $up->rowCount() === 1;
+}
+
+/** Máximo de filas que muestra la tabla de pedidos del administrador. */
+const LIMITE_PEDIDOS_ADMIN = 200;
+
+/**
+ * Números de la "sala de control" del administrador:
+ * - pedidos_hoy: pedidos creados hoy · en_cocina: Pending + Preparing · platos_activos: available = 1
+ * - ingresos: suma de precio × cantidad de los pedidos Served. OJO: orders no guarda el precio del
+ *   momento de la venta, así que se usa el precio ACTUAL del plato (en la página se rotula como tal).
+ * - por_estado: [estado => cantidad] con los 4 estados siempre presentes (en 0 si no hay)
+ * - top_platos: los 5 platos con más unidades pedidas [['nombre', 'unidades', 'imagen'], ...]
+ */
+function estadisticas_admin(): array
+{
+    $pdo = conectar();
+
+    $pedidos_hoy = (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE DATE(created_at) = CURDATE()')->fetchColumn();
+    $ingresos = (float) $pdo->query(
+        "SELECT COALESCE(SUM(d.price * o.quantity), 0)
+         FROM orders o JOIN dishes d ON d.id = o.dish_id
+         WHERE o.status = 'Served'"
+    )->fetchColumn();
+    $platos_activos = (int) $pdo->query('SELECT COUNT(*) FROM dishes WHERE available = 1')->fetchColumn();
+
+    // Se parte de los 4 estados en 0 y la consulta rellena los que tienen pedidos
+    $por_estado = array_fill_keys(ESTADOS, 0);
+    foreach ($pdo->query('SELECT status, COUNT(*) AS n FROM orders GROUP BY status') as $fila) {
+        if (array_key_exists($fila['status'], $por_estado)) {
+            $por_estado[$fila['status']] = (int) $fila['n'];
+        }
+    }
+
+    $top_platos = [];
+    $filas = $pdo->query(
+        'SELECT d.name, d.image, SUM(o.quantity) AS unidades
+         FROM orders o JOIN dishes d ON d.id = o.dish_id
+         GROUP BY d.id, d.name, d.image
+         ORDER BY unidades DESC, d.name ASC
+         LIMIT 5'
+    );
+    foreach ($filas as $fila) {
+        $top_platos[] = ['nombre' => $fila['name'], 'unidades' => (int) $fila['unidades'], 'imagen' => $fila['image']];
+    }
+
+    return [
+        'pedidos_hoy'    => $pedidos_hoy,
+        'en_cocina'      => $por_estado['Pending'] + $por_estado['Preparing'],
+        'ingresos'       => $ingresos,
+        'platos_activos' => $platos_activos,
+        'por_estado'     => $por_estado,
+        'top_platos'     => $top_platos,
+    ];
+}
+
+/**
+ * Todos los pedidos para el administrador, del más nuevo al más viejo (máximo LIMITE_PEDIDOS_ADMIN).
+ * $estado: solo ese estado (si no es uno de ESTADOS se ignora). $buscar: texto que se busca en el
+ * usuario o el email del cliente y en el nombre del plato. Trae plato, cliente, email, camarero
+ * (null si no tiene), precio actual del plato y subtotal = precio × cantidad.
+ */
+function todos_los_pedidos(?string $estado = null, ?string $buscar = null): array
+{
+    $condiciones = [];
+    $parametros = [];
+
+    if ($estado !== null && in_array($estado, ESTADOS, true)) {
+        $condiciones[] = 'o.status = ?';
+        $parametros[] = $estado;
+    }
+
+    $buscar = trim((string) $buscar);
+    if ($buscar !== '') {
+        // En LIKE, "%" y "_" son comodines: se escapan con "\" para que el texto del usuario se busque
+        // literal (si no, buscar "%" traería todos los pedidos). Los "%" de los extremos los pone PHP.
+        $patron = '%' . addcslashes($buscar, '\\%_') . '%';
+        $condiciones[] = '(c.username LIKE ? OR c.email LIKE ? OR d.name LIKE ?)';
+        array_push($parametros, $patron, $patron, $patron);
+    }
+
+    // $where solo une textos fijos escritos aquí; los valores del usuario viajan en $parametros
+    $where = $condiciones ? 'WHERE ' . implode(' AND ', $condiciones) : '';
+    $st = conectar()->prepare(
+        "SELECT o.id, o.status, o.quantity, o.created_at,
+                d.name AS plato, d.price, d.price * o.quantity AS subtotal,
+                c.username AS cliente, c.email,
+                w.username AS camarero
+         FROM orders o
+         JOIN dishes d ON d.id = o.dish_id
+         JOIN users c ON c.id = o.user_id
+         LEFT JOIN users w ON w.id = o.waiter_id
+         $where
+         ORDER BY o.created_at DESC, o.id DESC
+         LIMIT " . LIMITE_PEDIDOS_ADMIN
+    );
+    $st->execute($parametros);
+    return $st->fetchAll();
+}
+
+/** Elimina un pedido (solo el administrador). Devuelve true si existía y se borró. */
+function eliminar_pedido(int $id): bool
+{
+    $st = conectar()->prepare('DELETE FROM orders WHERE id = ?');
+    $st->execute([$id]);
+    return $st->rowCount() === 1;
 }

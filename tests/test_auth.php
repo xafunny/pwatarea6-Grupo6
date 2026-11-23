@@ -83,6 +83,7 @@ comprobar('eliminar_usuario a sí mismo devuelve propio', eliminar_usuario($id, 
 comprobar('eliminar_usuario con pedidos devuelve tiene_pedidos', eliminar_usuario(4, 1) === 'tiene_pedidos');
 comprobar('eliminar_usuario del usuario de prueba devuelve ok', eliminar_usuario($id, 1) === 'ok');
 comprobar('el usuario de prueba ya no existe', buscar_usuario_por_email($correo) === null);
+comprobar('eliminar_usuario de un id inexistente devuelve no_existe', eliminar_usuario(99999999, 1) === 'no_existe');
 
 // es_cliente(): el camarero solo puede pedir a nombre de un usuario con rol Client
 $id_cliente_seed = (int) (buscar_usuario_por_email('cliente@ebano.com')['id'] ?? 0);
