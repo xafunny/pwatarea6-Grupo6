@@ -72,6 +72,17 @@ comprobar('registrar_cliente rechaza email inválido', lanza(fn() => registrar_c
 comprobar('guardar_usuario rechaza rol inexistente', lanza(fn() => guardar_usuario(
     ['username' => 'Cliente de Prueba', 'email' => $correo, 'password' => '', 'role_id' => 999], $id)));
 
+// Largo de la contraseña: el mínimo cuenta caracteres y el máximo cuenta bytes (límite de bcrypt)
+$libre = 'largo_' . $correo;
+comprobar('errores_usuario: 5 letras con tilde (10 bytes) son menos de 6 caracteres',
+    isset(errores_usuario('Ana', $libre, 'ñáéíó', true)['clave']));
+comprobar('errores_usuario: 6 letras con tilde (12 bytes) cumplen el mínimo',
+    !isset(errores_usuario('Ana', $libre, 'ñáéíóú', true)['clave']));
+comprobar('errores_usuario: 37 letras con tilde (74 bytes) superan el máximo de 72 bytes',
+    isset(errores_usuario('Ana', $libre, str_repeat('ñ', 37), true)['clave']));
+comprobar('errores_usuario: 36 letras con tilde (72 bytes) caben',
+    !isset(errores_usuario('Ana', $libre, str_repeat('ñ', 36), true)['clave']));
+
 // guardar_usuario(): editar sin contraseña conserva la actual
 guardar_usuario(['username' => 'Cliente Editado', 'email' => $correo, 'password' => '', 'role_id' => id_rol('Client')], $id);
 $editado = buscar_usuario_por_email($correo);
@@ -80,7 +91,9 @@ comprobar('guardar_usuario con clave vacía conserva la contraseña', password_v
 
 // eliminar_usuario()
 comprobar('eliminar_usuario a sí mismo devuelve propio', eliminar_usuario($id, $id) === 'propio');
-comprobar('eliminar_usuario con pedidos devuelve tiene_pedidos', eliminar_usuario(4, 1) === 'tiene_pedidos');
+// El usuario "con pedidos" se busca por su email, no por un id fijo
+$id_con_pedidos = (int) (buscar_usuario_por_email('cliente@ebano.com')['id'] ?? 0);
+comprobar('eliminar_usuario con pedidos devuelve tiene_pedidos', eliminar_usuario($id_con_pedidos, 1) === 'tiene_pedidos');
 comprobar('eliminar_usuario del usuario de prueba devuelve ok', eliminar_usuario($id, 1) === 'ok');
 comprobar('el usuario de prueba ya no existe', buscar_usuario_por_email($correo) === null);
 comprobar('eliminar_usuario de un id inexistente devuelve no_existe', eliminar_usuario(99999999, 1) === 'no_existe');

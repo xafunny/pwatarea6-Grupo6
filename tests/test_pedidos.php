@@ -60,11 +60,15 @@ $max_previo = (int) $pdo->query('SELECT COALESCE(MAX(id), 0) FROM orders')->fetc
 $cliente_id = id_por_email('cliente@ebano.com');
 $chef = ['id' => id_por_email('chef@ebano.com'), 'role' => 'Chef'];
 $plato_oculto = 2; // se oculta un momento para probar que no se puede pedir
+// Se guarda su disponibilidad original para restaurarla tal cual (no se asume que era 1)
+$st_original = $pdo->prepare('SELECT available FROM dishes WHERE id = ?');
+$st_original->execute([$plato_oculto]);
+$disponible_original = (int) $st_original->fetchColumn();
 
 // Limpieza garantizada aunque una comprobación lance una excepción a medio camino
-register_shutdown_function(function () use ($max_previo, $plato_oculto) {
+register_shutdown_function(function () use ($max_previo, $plato_oculto, $disponible_original) {
     conectar()->prepare('DELETE FROM orders WHERE id > ?')->execute([$max_previo]);
-    conectar()->prepare('UPDATE dishes SET available = 1 WHERE id = ?')->execute([$plato_oculto]);
+    conectar()->prepare('UPDATE dishes SET available = ? WHERE id = ?')->execute([$disponible_original, $plato_oculto]);
 });
 
 comprobar('el cliente y el chef de prueba existen', $cliente_id > 0 && $chef['id'] > 0);
@@ -93,9 +97,9 @@ comprobar('crear_pedidos con plato 99999 lanza', lanza(fn() => crear_pedidos($cl
 $pdo->prepare('UPDATE dishes SET available = 0 WHERE id = ?')->execute([$plato_oculto]);
 comprobar('crear_pedidos con un plato oculto lanza',
     lanza(fn() => crear_pedidos($cliente_id, [['dish_id' => $plato_oculto, 'quantity' => 1]])));
-$pdo->prepare('UPDATE dishes SET available = 1 WHERE id = ?')->execute([$plato_oculto]);
+$pdo->prepare('UPDATE dishes SET available = ? WHERE id = ?')->execute([$disponible_original, $plato_oculto]);
 
-comprobar('un carrito mixto (válido + inválido) lanza',
+comprobar('validar antes de escribir: un carrito mixto (válido + inválido) lanza',
     lanza(fn() => crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1], ['dish_id' => 99999, 'quantity' => 1]])));
 $demasiados = array_fill(0, 31, ['dish_id' => 1, 'quantity' => 1]);
 comprobar('crear_pedidos con más de 30 platos distintos lanza', lanza(fn() => crear_pedidos($cliente_id, $demasiados)));
@@ -258,12 +262,15 @@ comprobar('pedidos_listos incluye los 2 pedidos listos preparados',
     in_array($id_listo_viejo, $ids_listos, true) && in_array($id_listo_nuevo, $ids_listos, true));
 comprobar('pedidos_listos solo trae Ready to serve', $solo_listos);
 comprobar('pedidos_listos va del más viejo al más nuevo', $listos_ascendente);
+// array_search devuelve false si no encuentra el id: se comprueba antes de usarlo como índice
+$pos_viejo = array_search($id_listo_viejo, $ids_listos, true);
+$pos_nuevo = array_search($id_listo_nuevo, $ids_listos, true);
 comprobar('pedidos_listos pone el de hace 1 hora antes que el de ahora',
-    array_search($id_listo_viejo, $ids_listos, true) < array_search($id_listo_nuevo, $ids_listos, true));
-$fila_vieja = $listos[array_search($id_listo_viejo, $ids_listos, true)];
-$fila_nueva = $listos[array_search($id_listo_nuevo, $ids_listos, true)];
+    $pos_viejo !== false && $pos_nuevo !== false && $pos_viejo < $pos_nuevo);
+$fila_vieja = $pos_viejo !== false ? $listos[$pos_viejo] : [];
+$fila_nueva = $pos_nuevo !== false ? $listos[$pos_nuevo] : [];
 comprobar('pedidos_listos trae el camarero del pedido asignado',
-    $fila_vieja['camarero'] !== null && (int) $fila_vieja['camarero_id'] === $camarero['id']);
+    ($fila_vieja['camarero'] ?? null) !== null && (int) ($fila_vieja['camarero_id'] ?? 0) === $camarero['id']);
 comprobar('pedidos_listos trae camarero null en el pedido sin asignar',
     array_key_exists('camarero', $fila_nueva) && $fila_nueva['camarero'] === null);
 
@@ -358,6 +365,7 @@ comprobar('todos_los_pedidos combina estado y búsqueda',
     count(todos_los_pedidos('Served', 'cliente@ebano')) <= count($por_email));
 comprobar('buscar "%" no coincide con todo (se escapa el comodín)', count(todos_los_pedidos(null, '%')) === 0);
 comprobar('buscar "_" no coincide con todo (se escapa el comodín)', count(todos_los_pedidos(null, '_')) === 0);
+comprobar('buscar "!" (el carácter de escape) no rompe la consulta', count(todos_los_pedidos(null, '!')) === 0);
 
 comprobar('eliminar_pedido de un pedido existente es true', eliminar_pedido($id_servido_viejo) === true);
 comprobar('el pedido eliminado ya no existe', fila_pedido($id_servido_viejo) === []);

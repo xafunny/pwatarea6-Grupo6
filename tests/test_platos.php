@@ -86,6 +86,8 @@ comprobar('precio 10000 lanza', lanza(fn() => guardar_plato(plato_valido(['price
 comprobar('precio no numérico lanza', lanza(fn() => guardar_plato(plato_valido(['price' => 'doce']))));
 comprobar('categoría fuera de la lista lanza', lanza(fn() => guardar_plato(plato_valido(['category' => 'Sopas']))));
 comprobar('imagen javascript: lanza', lanza(fn() => guardar_plato(plato_valido(['image' => 'javascript:alert(1)']))));
+// Esta SÍ pasa filter_var(FILTER_VALIDATE_URL): solo la comprobación de esquema (http/https) la frena
+comprobar('imagen javascript://x%0Aalert(1) lanza', lanza(fn() => guardar_plato(plato_valido(['image' => 'javascript://x%0Aalert(1)']))));
 comprobar('imagen ftp:// lanza', lanza(fn() => guardar_plato(plato_valido(['image' => 'ftp://ejemplo.com/a.jpg']))));
 comprobar('imagen que no es URL lanza', lanza(fn() => guardar_plato(plato_valido(['image' => 'foto.jpg']))));
 comprobar('available distinto de 0/1 lanza', lanza(fn() => guardar_plato(plato_valido(['available' => '7']))));

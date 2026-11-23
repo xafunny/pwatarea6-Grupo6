@@ -64,6 +64,16 @@ comprobar('csrf_token tiene 64 caracteres hex', preg_match('/^[0-9a-f]{64}$/', $
 comprobar('csrf_token es estable entre llamadas', csrf_token() === $token);
 comprobar('campo_csrf incluye el token', str_contains(campo_csrf(), 'name="csrf"') && str_contains(campo_csrf(), $token));
 
+// verificar_csrf(): camino feliz (con un token incorrecto responde 403 y termina el script, no se puede probar aquí)
+$_POST['csrf'] = csrf_token();
+verificar_csrf(); // si el token fuera rechazado, el script terminaría aquí con exit y no llegaría a la línea siguiente
+comprobar('verificar_csrf con el token correcto retorna sin salir', true);
+unset($_POST['csrf']);
+$_SERVER['HTTP_X_CSRF_TOKEN'] = csrf_token();
+verificar_csrf();
+comprobar('verificar_csrf acepta el token por la cabecera X-CSRF-Token', true);
+unset($_SERVER['HTTP_X_CSRF_TOKEN']);
+
 // Flash
 flash('success', 'Hecho <b>');
 $html = mostrar_flash();
