@@ -34,11 +34,12 @@ function categoria_normalizada(?string $c): string
  */
 function obtener_platos(bool $solo_disponibles = true): array
 {
-    $sql = 'SELECT id, name, description, price, category, image, available FROM dishes';
-    if ($solo_disponibles) {
-        $sql .= ' WHERE available = 1';
-    }
-    $platos = conectar()->query($sql)->fetchAll();
+    // available >= ? : con 1 trae solo los disponibles, con 0 trae todos (sentencia preparada igualmente)
+    $st = conectar()->prepare(
+        'SELECT id, name, description, price, category, image, available FROM dishes WHERE available >= ?'
+    );
+    $st->execute([$solo_disponibles ? 1 : 0]);
+    $platos = $st->fetchAll();
 
     foreach ($platos as &$plato) {
         $plato['categoria'] = categoria_normalizada($plato['category']);
