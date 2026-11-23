@@ -6,6 +6,10 @@
  *   - dentro del formulario: [data-carrito-lista], [data-carrito-vacio], [data-carrito-total],
  *     [data-carrito-campos] y el botón [data-carrito-confirmar];
  *   - en cualquier lugar: [data-carrito-contador] (insignia) y [data-carrito-aviso] (región aria-live).
+ *   - opcional (solo en "nuevo pedido" del camarero): un <select data-carrito-cliente> con el cliente
+ *     y un [data-carrito-para] donde se muestra para quién es (con un botón [data-carrito-elegir]
+ *     que lleva al select). Sin cliente elegido no se puede enviar.
+ *     En el menú del cliente esos elementos no existen y el carrito funciona igual que siempre.
  * El estado es un objeto { idPlato: { nombre, precio, cantidad } } guardado en localStorage.
  * El precio solo se usa para MOSTRAR el total: el servidor nunca lo recibe ni confía en él.
  * También filtra la carta con los chips de categoría ([data-filtro]).
@@ -60,6 +64,34 @@ function anunciar(mensaje) {
     const aviso = document.querySelector('[data-carrito-aviso]');
     if (aviso) {
         aviso.textContent = mensaje;
+    }
+}
+
+/** true si la página no pide cliente (menú del cliente) o si ya se eligió uno en el select. */
+function clienteElegido() {
+    const selector = document.querySelector('[data-carrito-cliente]');
+    return !selector || selector.value !== '';
+}
+
+/**
+ * Muestra en [data-carrito-para] el nombre del cliente elegido, o el aviso de que falta elegirlo.
+ * El botón [data-carrito-elegir] ("Elegir cliente") solo se ve mientras falta.
+ */
+function mostrarCliente() {
+    const selector = document.querySelector('[data-carrito-cliente]');
+    const para = document.querySelector('[data-carrito-para]');
+    if (!selector || !para) {
+        return;
+    }
+    const elegido = selector.value !== '';
+    const texto = para.querySelector('[data-carrito-para-texto]') || para;
+    const elegir = para.querySelector('[data-carrito-elegir]');
+    para.classList.toggle('falta', !elegido);
+    texto.textContent = elegido
+        ? 'Para: ' + selector.options[selector.selectedIndex].dataset.nombre
+        : 'Falta elegir el cliente (paso 1).';
+    if (elegir) {
+        elegir.hidden = elegido;
     }
 }
 
@@ -184,7 +216,8 @@ function renderizarCarrito() {
     vacio.hidden = !estaVacio;
     lista.hidden = estaVacio;
     total.textContent = formatearDinero(suma);
-    confirmar.disabled = estaVacio;
+    confirmar.disabled = estaVacio || !clienteElegido();
+    mostrarCliente();
     actualizarContador();
 }
 
@@ -279,6 +312,11 @@ function prepararEnvio(evento) {
     if (ids.length === 0) {
         evento.preventDefault();
         anunciar('Tu pedido está vacío. Añade al menos un plato.');
+        return;
+    }
+    if (!clienteElegido()) {
+        evento.preventDefault();
+        anunciar('Elige primero para qué cliente es el pedido.');
         return;
     }
 
@@ -382,6 +420,21 @@ function iniciarCarrito() {
         }
         restaurarFoco(raiz, accion, id);
     });
+
+    // Al cambiar de cliente se redibuja: habilita o no el botón y actualiza "Para: ..."
+    const selector = document.querySelector('[data-carrito-cliente]');
+    if (selector) {
+        selector.addEventListener('change', renderizarCarrito);
+        // "Elegir cliente": Bootstrap cierra el carrito y, cuando terminó de cerrarse, el foco va al select
+        const elegir = raiz.querySelector('[data-carrito-elegir]');
+        if (elegir) {
+            elegir.addEventListener('click', function () {
+                raiz.addEventListener('hidden.bs.offcanvas', function () {
+                    selector.focus();
+                }, { once: true });
+            });
+        }
+    }
 
     raiz.addEventListener('submit', prepararEnvio);
     prepararPulso();

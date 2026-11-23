@@ -139,6 +139,20 @@ function obtener_clientes(): array
     return conectar()->query($sql)->fetchAll();
 }
 
+/**
+ * Indica si el id corresponde a un usuario con rol Client.
+ * El camarero elige al cliente en un <select>, pero el valor llega del navegador y puede venir
+ * manipulado: el servidor lo comprueba aquí antes de crear pedidos a su nombre.
+ */
+function es_cliente(int $id): bool
+{
+    $st = conectar()->prepare(
+        "SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? AND r.name = 'Client'"
+    );
+    $st->execute([$id]);
+    return (int) $st->fetchColumn() === 1;
+}
+
 /** Lista los roles [id, name] en el orden en que se crearon. */
 function obtener_roles(): array
 {

@@ -1422,6 +1422,299 @@ a.card-ebano:hover,
 .ticket-esperando { display: inline-flex; align-items: center; gap: .4rem; color: var(--estado-listo); font-size: .8rem; font-weight: 600; }
 .ticket-accion[disabled] { cursor: progress; }
 
+/* ---- Camarero: panel de sala y nuevo pedido ----
+   Composición propia: cabecera con saludo, un resumen en una sola banda, "el pase" (franja dorada
+   que se desliza en horizontal) y debajo las listas en pestañas, densas como una libreta de comandas. */
+.sala-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    margin-bottom: 1.75rem;
+}
+.sala-cabecera .titulo-seccion { flex: 1 1 24rem; }
+.sala-nombre { color: var(--oro-claro); font-weight: 600; }
+.btn-nuevo-pedido { display: inline-flex; align-items: center; gap: .55rem; --bs-btn-padding-x: 1.7rem; }
+
+/* Resumen del turno: una banda con 3 celdas separadas por líneas finas (no 3 tarjetas sueltas) */
+.sala-resumen {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0 0 2rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+}
+.sala-dato { padding: 1rem 1.35rem 1.1rem; }
+.sala-dato + .sala-dato { border-left: 1px solid var(--borde); }
+.sala-dato dt {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    color: var(--texto-2);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.sala-dato dt .bi { color: var(--oro); }
+.sala-dato dd {
+    margin: .35rem 0 0;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2rem, 2vw + 1.2rem, 2.6rem);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.sala-dato.destacado dd { color: var(--oro-claro); }
+
+/* El pase: donde la cocina deja los platos terminados. Borde y tinte dorados en toda la franja */
+.pase {
+    margin-bottom: 2.75rem;
+    padding: 1.25rem 1.25rem .5rem;
+    border: 1px solid rgba(var(--oro-rgb), .38);
+    border-radius: var(--radio-lg);
+    background:
+        linear-gradient(180deg, rgba(var(--oro-rgb), .11), rgba(var(--oro-rgb), .02) 70%),
+        var(--superficie);
+    box-shadow: var(--sombra);
+}
+.pase-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .75rem;
+    margin-bottom: 1rem;
+}
+.pase-icono {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--oro);
+    color: var(--tinta-sobre-oro);
+    font-size: 1.05rem;
+}
+.pase-titulo { margin: 0; font-size: clamp(1.5rem, 1vw + 1.2rem, 1.85rem); }
+.pase-cuenta {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding-inline: .5rem;
+    border: 1px solid rgba(var(--oro-rgb), .55);
+    border-radius: 999px;
+    color: var(--oro-claro);
+    font-size: .85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.pase-nota { margin: 0 0 0 auto; color: var(--texto-2); font-size: .8125rem; }
+
+/* Carril horizontal con "enganche" (scroll-snap); el margen negativo lo lleva hasta el borde de la franja */
+.pase-carril {
+    display: flex;
+    gap: 1rem;
+    margin: 0 -1.25rem;
+    padding: .25rem 1.25rem 1rem;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
+    scrollbar-color: rgba(var(--oro-rgb), .45) transparent;
+}
+.pase-tarjeta {
+    position: relative; /* contiene al .visually-hidden (absolute): si no, se sale del carril y crea scroll horizontal */
+    flex: 0 0 min(17.5rem, 84%);
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding: 1rem 1.1rem 1.1rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio);
+    background: var(--elevada);
+    box-shadow: 0 8px 18px -10px rgba(0, 0, 0, .7);
+}
+/* Los que ya son de este camarero: borde dorado completo */
+.pase-tarjeta.mia { border-color: rgba(var(--oro-rgb), .6); }
+.pase-tarjeta-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+}
+.pase-numero { color: var(--texto-2); font-weight: 700; letter-spacing: .1em; }
+.pase-espera { display: inline-flex; align-items: center; gap: .35rem; color: var(--texto-2); white-space: nowrap; }
+/* Un plato que lleva rato en el pase se enfría: se avisa en tono cobre */
+.pase-espera.demora {
+    padding: .15rem .55rem;
+    border: 1px solid color-mix(in srgb, var(--estado-preparando) 50%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--estado-preparando) 14%, transparent);
+    color: var(--estado-preparando);
+    font-weight: 700;
+}
+.pase-plato { margin: 0; font-size: 1.4rem; line-height: 1.15; overflow-wrap: anywhere; }
+.pase-cantidad { color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+.pase-datos { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: 0 0 .35rem; font-size: .85rem; }
+.pase-datos dt { color: var(--texto-2); font-size: .72rem; font-weight: 600; }
+.pase-datos dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.pase-tuyo { color: var(--oro-claro); }
+.pase-libre { color: var(--texto-2); font-style: italic; font-weight: 500 !important; }
+.pase-form { margin-top: auto; }
+.pase-vacio {
+    margin: 0 0 .75rem;
+    padding: 1.5rem 0 .75rem;
+    color: var(--texto-2);
+    font-family: var(--fuente-titulos);
+    font-size: 1.3rem;
+    font-style: italic;
+}
+
+/* Pestañas (nav-pills de Bootstrap con los colores de Ébano) */
+.sala-pestanas {
+    --bs-nav-link-color: var(--texto-2);
+    --bs-nav-link-hover-color: var(--texto);
+    --bs-nav-link-font-weight: 600;
+    --bs-nav-pills-border-radius: 999px;
+    --bs-nav-pills-link-active-color: var(--oro-claro);
+    --bs-nav-pills-link-active-bg: rgba(var(--oro-rgb), .12);
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+}
+.sala-pestanas .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    border: 1px solid var(--borde-fuerte);
+    transition: color var(--rapido), background-color var(--rapido), border-color var(--rapido);
+}
+.sala-pestanas .nav-link:hover { border-color: rgba(var(--oro-rgb), .55); }
+.sala-pestanas .nav-link.active { border-color: rgba(var(--oro-rgb), .55); }
+.pestana-numero {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding-inline: .4rem;
+    border-radius: 999px;
+    background: var(--elevada);
+    color: var(--texto);
+    font-size: .75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.sala-pestanas .nav-link.active .pestana-numero { background: var(--oro); color: var(--tinta-sobre-oro); }
+.tab-pane:focus-visible { outline-offset: 6px; }
+
+/* Lista de pedidos: filas en una sola superficie, separadas por líneas */
+.lista-sala {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+}
+.fila-sala {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem 1.5rem;
+    padding: 1rem 1.35rem;
+    border-bottom: 1px solid var(--borde);
+    transition: background-color var(--rapido);
+}
+.fila-sala:last-child { border-bottom: 0; }
+.fila-sala:hover { background: rgba(var(--oro-rgb), .035); }
+.fila-numero {
+    flex: 0 0 4rem;
+    color: var(--texto-2);
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+}
+.fila-cuerpo { flex: 1 1 14rem; min-width: 0; }
+.fila-plato { margin: 0 0 .2rem; font-size: 1.3rem; line-height: 1.2; overflow-wrap: anywhere; }
+.fila-cantidad { color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; }
+.fila-meta { display: flex; flex-wrap: wrap; gap: .2rem 1rem; margin: 0; color: var(--texto-2); font-size: .8125rem; }
+.fila-meta .bi { margin-right: .2rem; }
+.fila-estado { display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
+.fila-sala.entregada .fila-plato { color: var(--texto-2); }
+.fila-sala.entregada .fila-cantidad { color: inherit; }
+
+/* Progreso compacto: 4 tramos; los pasados en oro apagado y el actual en oro */
+.progreso-mini { display: flex; gap: 3px; }
+.progreso-mini span { width: 1.15rem; height: 4px; border-radius: 2px; background: var(--borde-fuerte); }
+.progreso-mini span.hecho { background: var(--oro-apagado); }
+.progreso-mini span.actual { background: var(--oro); }
+
+/* Lista vacía: icono dorado + frase, sin ocupar media pantalla */
+.sala-vacio {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio);
+    color: var(--texto-2);
+}
+.sala-vacio > .bi { color: var(--oro); font-size: 1.6rem; line-height: 1; }
+.sala-vacio p { margin: 0; }
+.sala-vacio .sala-vacio-titulo { margin-bottom: .25rem; color: var(--texto); font-family: var(--fuente-titulos); font-size: 1.35rem; font-weight: 600; }
+
+/* Nuevo pedido: dos pasos con su número en un círculo dorado */
+.paso-sala {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 1.25rem;
+    margin-bottom: 2.5rem;
+}
+.paso-sala-numero {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgba(var(--oro-rgb), .6);
+    border-radius: 50%;
+    color: var(--oro-claro);
+    font-family: var(--fuente-titulos);
+    font-size: 1.35rem;
+    font-weight: 600;
+    font-variant-numeric: lining-nums; /* sin esto, el "1" de Cormorant parece una "I" */
+    line-height: 1;
+}
+.paso-sala-cuerpo h2 { margin: .2rem 0 1rem; font-size: clamp(1.6rem, 1.2vw + 1.2rem, 2rem); }
+.paso-sala .form-select { max-width: 32rem; }
+.pagina-nuevo-pedido .pie { padding-bottom: 6rem; } /* que el botón flotante no tape el pie */
+
+/* "Para: ana" en el pie del carrito; en tono de peligro mientras falta elegir el cliente */
+.carrito-para {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin: 0 0 1rem;
+    padding: .6rem .85rem;
+    border: 1px solid rgba(var(--oro-rgb), .4);
+    border-radius: var(--radio-sm);
+    background: rgba(var(--oro-rgb), .07);
+    color: var(--oro-claro);
+    font-size: .875rem;
+    font-weight: 600;
+}
+.carrito-para.falta {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--peligro) 55%, transparent);
+    background: transparent;
+    color: var(--peligro);
+}
 /* ---- Página 403 ---- */
 .error-403 {
     display: flex;
@@ -1517,6 +1810,19 @@ a.card-ebano:hover,
     .progreso-texto { font-size: .6875rem; }
     .cocina-kpis { width: 100%; justify-content: space-between; gap: 1rem; }
     .cocina-kpi dd { font-size: 1.9rem; }
+    /* Panel de sala en el teléfono */
+    .btn-nuevo-pedido { width: 100%; justify-content: center; }
+    .sala-dato { padding: .85rem .8rem .9rem; }
+    .sala-dato dt { font-size: .72rem; line-height: 1.25; }
+    .sala-dato dt .bi { display: none; } /* en 3 columnas estrechas el texto necesita todo el ancho */
+    .pase { padding-inline: 1rem; }
+    .pase-carril { margin-inline: -1rem; padding-inline: 1rem; scroll-padding-inline: 1rem; }
+    .pase-nota { flex-basis: 100%; margin-left: 0; }
+    .fila-sala { padding-inline: 1rem; }
+    .fila-numero { flex-basis: 100%; }
+    .fila-estado { flex-direction: row; align-items: center; }
+    .paso-sala { grid-template-columns: minmax(0, 1fr); }
+    .paso-sala-numero { width: 2rem; height: 2rem; font-size: 1.1rem; margin-bottom: .5rem; }
 }
 
 /* Quien pide menos movimiento al sistema operativo no ve transiciones ni zoom */

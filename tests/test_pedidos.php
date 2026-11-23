@@ -188,4 +188,90 @@ comprobar('pedidos_cocina trae plato, cliente, camarero y minutos',
     isset($cocina[0]) && array_key_exists('camarero', $cocina[0])
     && isset($cocina[0]['plato'], $cocina[0]['cliente'], $cocina[0]['minutos']));
 
+// items_desde_post(): convierte items[id]=cantidad del formulario en la lista para crear_pedidos()
+comprobar('items_desde_post convierte id y cantidad a int',
+    items_desde_post(['4' => '2', '7' => '1']) === [['dish_id' => 4, 'quantity' => 2], ['dish_id' => 7, 'quantity' => 1]]);
+comprobar('items_desde_post con algo que no es arreglo devuelve []', items_desde_post('x') === [] && items_desde_post(null) === []);
+comprobar('items_desde_post deja en 0 una cantidad que es arreglo',
+    items_desde_post(['4' => ['9']]) === [['dish_id' => 4, 'quantity' => 0]]);
+
+// ---- Camarero: pedidos a su nombre, sin asignar y listos para servir ----
+$otro_camarero = ['id' => id_por_email('chef@ebano.com'), 'role' => 'Waiter']; // solo hace falta otro id
+
+// crear_pedidos() con $camarero_id guarda ese camarero (el pedido tomado en sala)
+crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]], $camarero['id']);
+$id_en_sala = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+comprobar('crear_pedidos con $camarero_id guarda ese waiter_id',
+    (int) (fila_pedido($id_en_sala)['waiter_id'] ?? 0) === $camarero['id']);
+
+// Un pedido nuevo sin camarero: tiene que aparecer en pedidos_sin_asignar()
+crear_pedidos($cliente_id, [['dish_id' => 3, 'quantity' => 2]]);
+$id_libre = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+
+$sin_asignar = pedidos_sin_asignar();
+$solo_libres = true;
+foreach ($sin_asignar as $fila_libre) {
+    if ($fila_libre['camarero_id'] !== null || $fila_libre['status'] === 'Served') {
+        $solo_libres = false;
+    }
+}
+comprobar('pedidos_sin_asignar solo trae waiter_id NULL y no Served', $solo_libres);
+comprobar('pedidos_sin_asignar incluye el pedido libre', in_array($id_libre, array_map('intval', array_column($sin_asignar, 'id')), true));
+comprobar('pedidos_sin_asignar trae plato, cliente y minutos',
+    isset($sin_asignar[0]['plato'], $sin_asignar[0]['cliente'], $sin_asignar[0]['minutos']));
+$asc = true;
+foreach ($sin_asignar as $i => $fila_libre) {
+    if ($i > 0 && $sin_asignar[$i - 1]['created_at'] > $fila_libre['created_at']) {
+        $asc = false;
+    }
+}
+comprobar('pedidos_sin_asignar va del más viejo al más nuevo', $asc);
+
+// pedidos_listos(): solo Ready to serve
+$listos = pedidos_listos();
+$solo_listos = true;
+foreach ($listos as $fila_lista) {
+    if ($fila_lista['status'] !== 'Ready to serve') {
+        $solo_listos = false;
+    }
+}
+comprobar('pedidos_listos solo trae Ready to serve', $solo_listos);
+comprobar('pedidos_listos trae el camarero (o null)', !isset($listos[0]) || array_key_exists('camarero', $listos[0]));
+
+// tomar_pedido(): solo el primero lo consigue
+comprobar('tomar_pedido la primera vez es true', tomar_pedido($id_libre, $camarero['id']) === true);
+comprobar('tomar_pedido deja el waiter_id del camarero', (int) fila_pedido($id_libre)['waiter_id'] === $camarero['id']);
+comprobar('tomar_pedido la segunda vez es false', tomar_pedido($id_libre, $camarero['id']) === false);
+comprobar('tomar_pedido de otro camarero es false', tomar_pedido($id_libre, $otro_camarero['id']) === false);
+comprobar('el pedido sigue siendo del primer camarero', (int) fila_pedido($id_libre)['waiter_id'] === $camarero['id']);
+comprobar('tomar_pedido de un pedido inexistente es false', tomar_pedido(99999999, $camarero['id']) === false);
+// Un entregado sin camarero (como el que sirvió el admin) no se puede tomar
+crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]]);
+$id_servido_libre = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+$pdo->prepare("UPDATE orders SET status = 'Served' WHERE id = ?")->execute([$id_servido_libre]);
+comprobar('tomar_pedido de un pedido Served es false', tomar_pedido($id_servido_libre, $camarero['id']) === false);
+
+// pedidos_de_camarero(): incluye lo tomado; los activos van antes que los entregados
+$mios_camarero = pedidos_de_camarero($camarero['id']);
+$ids_camarero = array_map('intval', array_column($mios_camarero, 'id'));
+comprobar('pedidos_de_camarero contiene el pedido tomado', in_array($id_libre, $ids_camarero, true));
+comprobar('pedidos_de_camarero contiene el pedido creado en sala', in_array($id_en_sala, $ids_camarero, true));
+$visto_servido = false;
+$activos_primero = true;
+$solo_suyos = true;
+foreach ($mios_camarero as $fila_mia) {
+    if ($fila_mia['status'] === 'Served') {
+        $visto_servido = true;
+    } elseif ($visto_servido) {
+        $activos_primero = false; // un activo después de un entregado
+    }
+    if ((int) $fila_mia['camarero_id'] !== $camarero['id']) {
+        $solo_suyos = false;
+    }
+}
+comprobar('pedidos_de_camarero pone los activos primero', $activos_primero);
+comprobar('pedidos_de_camarero solo trae pedidos del camarero', $solo_suyos);
+comprobar('pedidos_de_camarero trae plato, cliente y minutos',
+    isset($mios_camarero[0]['plato'], $mios_camarero[0]['cliente'], $mios_camarero[0]['minutos']));
+
 exit($fallos > 0 ? 1 : 0);

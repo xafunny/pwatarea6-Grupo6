@@ -20,3 +20,7 @@ define('DB_PASS', 'contrasena_mysql');           // en local: vacía
 define('BASE_URL', '/pwatarea6');
 
 define('APP_NAME', 'Ébano');
+
+// Zona horaria del restaurante: date() de PHP y NOW() de MySQL (ver conectar() en includes/db.php)
+// usan el mismo reloj, así las horas y los "hace X min" coinciden.
+date_default_timezone_set('America/Guayaquil');

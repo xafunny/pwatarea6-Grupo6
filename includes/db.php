@@ -28,6 +28,9 @@ function conectar(): PDO
 
     try {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $opciones);
+        // El servidor de MySQL del hosting puede estar en otra zona horaria. Se fija la de Ecuador (-05:00,
+        // sin horario de verano) para que NOW(), CURRENT_TIMESTAMP y TIMESTAMPDIFF usen el mismo reloj que PHP
+        $pdo->exec("SET time_zone = '-05:00'");
     } catch (PDOException $ex) {
         error_log('Error de conexión a la BD: ' . $ex->getMessage());
         // En consola (tests) se relanza para ver el error real

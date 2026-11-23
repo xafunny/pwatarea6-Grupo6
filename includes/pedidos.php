@@ -3,8 +3,9 @@
  * Lógica de pedidos (tabla orders).
  * Cada fila de orders es UN plato con su cantidad: un "pedido" del carrito con 3 platos
  * se guarda como 3 filas, todas en estado Pending.
- * Ofrece: crear pedidos (con validación y transacción), listar los pedidos de un cliente,
+ * Ofrece: leer el carrito del formulario (items_desde_post), crear pedidos (con validación y transacción), listar los pedidos de un cliente,
  * listar las comandas de la cocina (pedidos_cocina) y cambiar el estado de un pedido respetando la tabla de transiciones por rol.
+ * Para el camarero: sus pedidos, los sin asignar, los listos para servir y tomar_pedido().
  * Las Tasks del chef, el camarero y el admin agregan aquí sus propias consultas.
  */
 
@@ -20,6 +21,28 @@ const MAX_PLATOS_POR_PEDIDO = 30;
 const MINUTOS_URGENTE = 15;
 /** Clave de localStorage del carrito del cliente (la usan menu.php y mis_pedidos.php). */
 const CLAVE_CARRITO_CLIENTE = 'ebano_carrito_cliente';
+/** Clave del carrito del camarero: distinta, para que no se mezcle con el del cliente en un mismo navegador. */
+const CLAVE_CARRITO_CAMARERO = 'ebano_carrito_camarero';
+
+/**
+ * Convierte los campos items[id_plato] = cantidad que manda carrito.js en la lista que espera crear_pedidos().
+ * Solo se aceptan valores simples: si llega un arreglo dentro de otro, la cantidad queda en 0
+ * y crear_pedidos() rechaza el pedido. La usan el menú del cliente y el "nuevo pedido" del camarero.
+ */
+function items_desde_post(mixed $crudos): array
+{
+    if (!is_array($crudos)) {
+        return [];
+    }
+    $items = [];
+    foreach ($crudos as $plato_id => $cantidad) {
+        $items[] = [
+            'dish_id'  => (int) $plato_id,
+            'quantity' => is_scalar($cantidad) ? (int) $cantidad : 0,
+        ];
+    }
+    return $items;
+}
 
 /**
  * Crea un pedido por cada plato del carrito y devuelve cuántas filas insertó.
@@ -213,6 +236,80 @@ function hace_cuanto(int $minutos, string $fecha): string
     // "Ahora" según la BD = creación + minutos; si cae el mismo día, el pedido es de hoy
     $es_hoy = date('Y-m-d', $momento) === date('Y-m-d', $momento + $minutos * 60);
     return ($es_hoy ? 'hoy, ' : date('d/m', $momento) . ', ') . date('H:i', $momento);
+}
+
+/**
+ * Consulta base del panel del camarero: cada pedido con el nombre del plato ('plato'),
+ * el usuario del cliente ('cliente'), el id y el usuario del camarero ('camarero_id', 'camarero';
+ * null si nadie lo tomó) y los minutos de espera calculados por MySQL ('minutos').
+ * $condicion y $orden son SIEMPRE texto fijo escrito en este archivo (nunca datos del usuario);
+ * los valores variables viajan aparte en $parametros, como en cualquier sentencia preparada.
+ */
+function consultar_pedidos_sala(string $condicion, string $orden, array $parametros = []): array
+{
+    $st = conectar()->prepare(
+        "SELECT o.id, o.status, o.quantity, o.created_at,
+                TIMESTAMPDIFF(MINUTE, o.created_at, NOW()) AS minutos,
+                o.waiter_id AS camarero_id,
+                d.name AS plato,
+                c.username AS cliente,
+                w.username AS camarero
+         FROM orders o
+         JOIN dishes d ON d.id = o.dish_id
+         JOIN users c ON c.id = o.user_id
+         LEFT JOIN users w ON w.id = o.waiter_id
+         WHERE $condicion
+         ORDER BY $orden"
+    );
+    $st->execute($parametros);
+    return $st->fetchAll();
+}
+
+/**
+ * Pedidos asignados a un camarero: primero los que siguen en curso y después los entregados,
+ * cada grupo del más nuevo al más viejo. De los entregados solo se muestran los de hoy,
+ * para que la lista no crezca sin fin.
+ */
+function pedidos_de_camarero(int $camarero_id): array
+{
+    return consultar_pedidos_sala(
+        "o.waiter_id = ? AND (o.status <> 'Served' OR DATE(o.created_at) = CURDATE())",
+        // (o.status = 'Served') vale 0 o 1: los activos (0) quedan arriba
+        "(o.status = 'Served') ASC, o.created_at DESC, o.id DESC",
+        [$camarero_id]
+    );
+}
+
+/** Pedidos que nadie atiende todavía (sin camarero y sin entregar), del más viejo al más nuevo. */
+function pedidos_sin_asignar(): array
+{
+    return consultar_pedidos_sala(
+        "o.waiter_id IS NULL AND o.status <> 'Served'",
+        'o.created_at ASC, o.id ASC'
+    );
+}
+
+/** Pedidos que la cocina ya terminó y esperan en el pase, del que más espera al más reciente. */
+function pedidos_listos(): array
+{
+    return consultar_pedidos_sala(
+        "o.status = 'Ready to serve'",
+        'o.created_at ASC, o.id ASC'
+    );
+}
+
+/**
+ * El camarero se queda con un pedido sin asignar. Devuelve true solo si lo consiguió.
+ * Todo va en un único UPDATE con "waiter_id IS NULL": si dos camareros pulsan "Tomar" a la vez,
+ * MySQL deja pasar solo al primero y al segundo no le cambia ninguna fila (rowCount 0 -> false).
+ */
+function tomar_pedido(int $pedido_id, int $camarero_id): bool
+{
+    $st = conectar()->prepare(
+        "UPDATE orders SET waiter_id = ? WHERE id = ? AND waiter_id IS NULL AND status <> 'Served'"
+    );
+    $st->execute([$camarero_id, $pedido_id]);
+    return $st->rowCount() === 1;
 }
 
 /**

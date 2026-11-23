@@ -19,15 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verificar_csrf();
 
     if (($_POST['accion'] ?? '') === 'pedir') {
-        // items[id] = cantidad. Solo se aceptan valores simples: un array dentro de otro no vale
-        $crudos = is_array($_POST['items'] ?? null) ? $_POST['items'] : [];
-        $items = [];
-        foreach ($crudos as $plato_id => $cantidad) {
-            $items[] = [
-                'dish_id'  => (int) $plato_id,
-                'quantity' => is_scalar($cantidad) ? (int) $cantidad : 0,
-            ];
-        }
+        // items[id] = cantidad -> [['dish_id' => id, 'quantity' => cantidad], ...]
+        $items = items_desde_post($_POST['items'] ?? null);
 
         try {
             crear_pedidos($usuario['id'], $items);
