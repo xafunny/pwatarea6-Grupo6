@@ -1716,6 +1716,394 @@ a.card-ebano:hover,
     background: transparent;
     color: var(--peligro);
 }
+/* ==========================================================================
+   ADMINISTRADOR: sala de control (admin/dashboard.php) y gestión
+   (admin/platos.php, usuarios.php, pedidos.php)
+   Idea: una consola sobria. Fondo con una retícula muy tenue, una franja de indicadores
+   dividida por líneas finas y paneles asimétricos (barras de estado | lo más pedido).
+   ========================================================================== */
+
+/* Retícula de fondo: dos degradados repetidos de 1px trazan la cuadrícula de la "sala de control" */
+.pagina-control {
+    background:
+        repeating-linear-gradient(0deg, color-mix(in srgb, var(--borde) 35%, transparent) 0 1px, transparent 1px 48px),
+        repeating-linear-gradient(90deg, color-mix(in srgb, var(--borde) 35%, transparent) 0 1px, transparent 1px 48px),
+        var(--fondo);
+}
+
+/* ---- Cabecera: título a la izquierda, fecha a la derecha ---- */
+.control-cabecera,
+.gestion-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 2rem;
+}
+.control-titulo,
+.gestion-titulo { margin: 0; font-size: clamp(2.25rem, 3.5vw + 1rem, 3.5rem); }
+.control-saludo,
+.gestion-resumen { margin: .5rem 0 0; color: var(--texto-2); max-width: 62ch; }
+.control-saludo strong { color: var(--texto); }
+.control-fecha {
+    margin: 0;
+    padding: .45rem .9rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: var(--superficie);
+    color: var(--texto-2);
+    font-size: .875rem;
+    font-weight: 600;
+}
+.control-fecha::first-letter { text-transform: uppercase; }
+.control-fecha .bi { color: var(--oro); margin-right: .25rem; }
+
+/* ---- Franja de indicadores: una superficie con columnas separadas por líneas ---- */
+.control-indicadores {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    margin: 0 0 1.5rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+.indicador { padding: 1.35rem 1.5rem; border-left: 1px solid var(--borde); }
+.indicador:first-child { border-left: 0; }
+.indicador dt { color: var(--texto-2); font-size: .8125rem; font-weight: 600; }
+.indicador dt .bi { color: var(--oro); margin-right: .3rem; }
+.indicador dd {
+    margin: .35rem 0 0;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2.25rem, 2vw + 1.25rem, 3rem);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+/* El indicador principal (ingresos) es más ancho y lleva un fondo dorado muy tenue */
+.indicador-principal {
+    border-radius: var(--radio) 0 0 var(--radio);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--oro) 10%, transparent), transparent 70%);
+}
+.indicador-principal dd { font-size: clamp(2.5rem, 3vw + 1.25rem, 3.6rem); }
+.indicador .indicador-nota { margin: .5rem 0 0; color: var(--texto-2); font-family: var(--fuente-texto); font-size: .75rem; font-weight: 400; line-height: 1.4; }
+
+/* ---- Rejilla asimétrica: barras (ancho) | lo más pedido (angosto) ---- */
+.control-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.control-panel {
+    padding: 1.5rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+.control-panel-cabecera {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: .9rem;
+    border-bottom: 1px solid var(--borde);
+}
+.control-panel-cabecera h2 { margin: 0; font-size: 1.75rem; }
+.control-total { color: var(--texto-2); font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.control-vacio { margin: 0; padding-block: 1rem; color: var(--texto-2); font-family: var(--fuente-titulos); font-size: 1.25rem; font-style: italic; }
+
+/* Barras de estado: etiqueta | pista con relleno | número. El ancho del relleno lo pone PHP. */
+/* El panel de barras se estira al alto del panel vecino y reparte las 4 barras en ese espacio */
+.control-estados { display: flex; flex-direction: column; }
+.barras { display: grid; flex: 1; align-content: space-evenly; gap: 1.1rem; margin: 0; padding: 0; list-style: none; }
+.barra {
+    --tono: var(--estado-servido);
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr) 2.5rem;
+    align-items: center;
+    gap: 1rem;
+}
+.barra.pendiente  { --tono: var(--estado-pendiente); }
+.barra.preparando { --tono: var(--estado-preparando); }
+.barra.listo      { --tono: var(--estado-listo); }
+.barra.servido    { --tono: var(--estado-servido); }
+.barra-etiqueta { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; font-weight: 600; }
+.barra-etiqueta::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--tono); }
+.barra-pista {
+    height: .75rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tono) 10%, var(--elevada));
+    overflow: hidden;
+}
+.barra-relleno {
+    display: block;
+    height: 100%;
+    min-width: 2px; /* un estado en 0 deja una marca visible en vez de desaparecer */
+    border-radius: inherit;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--tono) 55%, var(--superficie)), var(--tono));
+    transform-origin: left center;
+    animation: barra-crece .6s var(--curva) both;
+}
+@keyframes barra-crece { from { transform: scaleX(0); } }
+.barra-numero {
+    text-align: right;
+    font-family: var(--fuente-titulos);
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--tono);
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Lo más pedido: puesto, miniatura, nombre y unidades */
+.top-lista { margin: 0; padding: 0; list-style: none; }
+.top-fila {
+    display: grid;
+    grid-template-columns: 1.5rem 3rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .85rem;
+    padding-block: .6rem;
+    border-bottom: 1px solid var(--borde);
+}
+.top-fila:last-child { border-bottom: 0; padding-bottom: 0; }
+.top-fila:first-child { padding-top: 0; }
+.top-puesto { color: var(--texto-2); font-family: var(--fuente-titulos); font-size: 1.25rem; font-variant-numeric: lining-nums; }
+.top-fila:first-child .top-puesto { color: var(--oro); }
+.top-foto { width: 3rem; height: 3rem; border-radius: var(--radio-sm); object-fit: cover; background: var(--elevada); }
+.top-sin-foto { display: grid; place-items: center; color: color-mix(in srgb, var(--oro) 60%, transparent); }
+.top-nombre { font-weight: 600; overflow-wrap: anywhere; line-height: 1.3; }
+.top-unidades { font-family: var(--fuente-titulos); font-size: 1.4rem; font-weight: 600; color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; }
+
+/* Accesos a la gestión: una fila de enlaces anchos con flecha, no tarjetas apiladas */
+.control-accesos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    overflow: hidden;
+}
+.acceso-gestion {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    border-left: 1px solid var(--borde);
+    color: var(--texto);
+    text-decoration: none;
+    transition: background-color var(--rapido), color var(--rapido);
+}
+.acceso-gestion:first-child { border-left: 0; }
+.acceso-gestion > .bi:first-child { color: var(--oro); font-size: 1.35rem; }
+.acceso-gestion-texto { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.acceso-gestion-titulo { font-family: var(--fuente-titulos); font-size: 1.4rem; font-weight: 600; line-height: 1.1; }
+.acceso-gestion-detalle { color: var(--texto-2); font-size: .8125rem; }
+.acceso-gestion-flecha { color: var(--texto-2); transition: transform var(--rapido) var(--curva), color var(--rapido); }
+.acceso-gestion:hover { background: color-mix(in srgb, var(--oro) 6%, transparent); color: var(--texto); }
+.acceso-gestion:hover .acceso-gestion-flecha { color: var(--oro-claro); transform: translateX(4px); }
+.acceso-gestion:focus-visible { outline-offset: -3px; }
+
+/* ---- Páginas de gestión: tabla en una superficie ---- */
+.gestion-tabla {
+    padding: .5rem 1.25rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+/* position: relative contiene a los .visually-hidden (absolute) de las celdas; si no, crean scroll horizontal en la página */
+.gestion-tabla .table-responsive { position: relative; }
+.gestion-cuenta { margin: 0 0 .75rem; color: var(--texto-2); font-size: .875rem; }
+.tabla-gestion { min-width: 40rem; }
+.tabla-pedidos { min-width: 56rem; }
+.tabla-gestion .text-end { text-align: right; }
+
+.acciones-fila { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
+
+/* Celda del plato: miniatura + nombre + descripción en una línea recortada */
+.celda-plato { display: flex; align-items: center; gap: .9rem; min-width: 16rem; }
+.miniatura {
+    flex: 0 0 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radio-sm);
+    object-fit: cover;
+    background: var(--elevada);
+}
+.miniatura-vacia { display: grid; place-items: center; color: color-mix(in srgb, var(--oro) 60%, transparent); }
+.celda-plato-texto { display: flex; flex-direction: column; min-width: 0; }
+.celda-plato-nombre { font-weight: 600; overflow-wrap: anywhere; }
+.celda-plato-desc {
+    max-width: 34ch;
+    overflow: hidden;
+    color: var(--texto-2);
+    font-size: .8125rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.celda-precio { font-size: 1.25rem; }
+.fila-oculta .miniatura { opacity: .45; filter: grayscale(.8); }
+.fila-oculta .celda-plato-nombre { color: var(--texto-2); }
+
+/* Interruptor "en carta": un botón de formulario con forma de switch */
+.interruptor {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .25rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--texto-2);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.interruptor-pista {
+    position: relative;
+    width: 2.5rem;
+    height: 1.4rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: var(--fondo);
+    transition: background-color var(--rapido), border-color var(--rapido);
+}
+.interruptor-pista::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(1.4rem - 6px);
+    height: calc(1.4rem - 6px);
+    border-radius: 50%;
+    background: var(--texto-2);
+    transition: transform var(--rapido) var(--curva), background-color var(--rapido);
+}
+.interruptor[aria-checked="true"] { color: var(--oro-claro); }
+.interruptor[aria-checked="true"] .interruptor-pista { background: color-mix(in srgb, var(--oro) 25%, var(--fondo)); border-color: var(--oro); }
+.interruptor[aria-checked="true"] .interruptor-pista::after { transform: translateX(1.1rem); background: var(--oro); }
+.interruptor:hover .interruptor-pista { border-color: var(--oro); }
+
+/* Botones de peligro: contorno en la tabla, sólido en el modal de confirmación */
+.btn-contorno-peligro {
+    --bs-btn-color: var(--peligro);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: color-mix(in srgb, var(--peligro) 45%, transparent);
+    --bs-btn-hover-color: var(--peligro);
+    --bs-btn-hover-bg: color-mix(in srgb, var(--peligro) 12%, transparent);
+    --bs-btn-hover-border-color: var(--peligro);
+    --bs-btn-active-color: var(--peligro);
+    --bs-btn-active-bg: color-mix(in srgb, var(--peligro) 18%, transparent);
+    --bs-btn-active-border-color: var(--peligro);
+    --bs-btn-disabled-color: var(--texto-2);
+    --bs-btn-disabled-border-color: var(--borde);
+}
+.btn-peligro {
+    --bs-btn-color: var(--tinta-sobre-oro);
+    --bs-btn-bg: var(--peligro);
+    --bs-btn-border-color: var(--peligro);
+    --bs-btn-hover-color: var(--tinta-sobre-oro);
+    --bs-btn-hover-bg: color-mix(in srgb, var(--peligro) 85%, var(--texto));
+    --bs-btn-hover-border-color: color-mix(in srgb, var(--peligro) 85%, var(--texto));
+    --bs-btn-active-color: var(--tinta-sobre-oro);
+    --bs-btn-active-bg: var(--peligro);
+    --bs-btn-active-border-color: var(--peligro);
+}
+
+/* Usuarios: avatar con iniciales, teñido según el rol */
+.celda-usuario { display: flex; align-items: center; gap: .75rem; min-width: 15rem; }
+.celda-usuario .celda-plato-nombre { overflow-wrap: break-word; }
+.avatar {
+    --tono: var(--estado-servido);
+    display: grid;
+    flex: 0 0 2.5rem;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid color-mix(in srgb, var(--tono) 50%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tono) 14%, var(--superficie));
+    color: var(--tono);
+    font-size: .8125rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.avatar.rol-administrator { --tono: var(--oro-claro); }
+.avatar.rol-chef { --tono: var(--estado-preparando); }
+.avatar.rol-waiter { --tono: var(--estado-listo); }
+.marca-tu {
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--oro);
+    color: var(--tinta-sobre-oro);
+    font-size: .6875rem;
+    font-weight: 700;
+}
+.celda-email { color: var(--texto-2); white-space: nowrap; }
+
+/* Pedidos: filtros, búsqueda y selector de estado en línea */
+.filtros-pedidos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.filtros-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.filtros-chips .chip { text-decoration: none; }
+.punto-estado { width: .5rem; height: .5rem; border-radius: 50%; background: var(--estado-servido); }
+.punto-estado.pendiente { background: var(--estado-pendiente); }
+.punto-estado.preparando { background: var(--estado-preparando); }
+.punto-estado.listo { background: var(--estado-listo); }
+.buscador { position: relative; display: flex; align-items: center; gap: .5rem; flex: 0 1 24rem; }
+.buscador > .bi { position: absolute; left: .9rem; color: var(--texto-2); pointer-events: none; }
+.buscador .form-control { padding-left: 2.4rem; }
+.tabla-pedidos > :not(caption) > * > * { padding-inline: .45rem; }
+.celda-pedido { white-space: nowrap; }
+.celda-numero { font-size: .875rem; font-weight: 700; letter-spacing: .06em; }
+.celda-pedido time { display: block; color: var(--texto-2); font-size: .75rem; }
+.tabla-pedidos .celda-plato-pedido { min-width: 11rem; }
+.cambiar-estado { display: flex; align-items: center; gap: .4rem; margin: 0; }
+.cambiar-estado .form-select { width: 8.75rem; padding-block: .35rem; font-size: .8125rem; }
+.cambiar-estado .btn { --bs-btn-padding-x: .75rem; }
+
+/* ---- Modales de Ébano (crear/editar y confirmar) ---- */
+.modal-ebano {
+    --bs-modal-bg: var(--superficie);
+    --bs-modal-color: var(--texto);
+    --bs-modal-border-color: var(--borde-fuerte);
+    --bs-modal-border-radius: var(--radio-lg);
+    --bs-modal-header-border-color: var(--borde);
+    --bs-modal-footer-border-color: var(--borde);
+    --bs-modal-padding: 1.5rem;
+    --bs-modal-header-padding: 1.25rem 1.5rem;
+}
+.modal-ebano .modal-content { box-shadow: var(--sombra-alta); }
+.modal-ebano .modal-title { font-size: 1.9rem; }
+.modal-ebano .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
+.modal-backdrop { --bs-backdrop-bg: var(--fondo); --bs-backdrop-opacity: .75; }
+
+/* Formulario del plato: campos | foto con vista previa */
+.form-plato { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; }
+.vista-previa {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    margin-top: .75rem;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio);
+    background: var(--fondo);
+    overflow: hidden;
+}
+.vista-previa img { width: 100%; height: 100%; object-fit: cover; }
+.vista-previa-vacia { display: inline-flex; flex-direction: column; align-items: center; gap: .5rem; color: var(--texto-2); font-size: .8125rem; }
+.vista-previa-vacia .marca-icono { width: 36px; height: 36px; }
+.vista-previa [hidden] { display: none; }
+
 /* ---- Página 403 ---- */
 .error-403 {
     display: flex;
@@ -1795,9 +2183,30 @@ a.card-ebano:hover,
         padding-top: 1rem;
         border-top: 1px solid var(--borde);
     }
+
+    /* Sala de control: indicadores en 2 × 2 (ingresos a lo ancho) y paneles en una columna */
+    .control-indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .indicador-principal { grid-column: 1 / -1; border-radius: var(--radio) var(--radio) 0 0; border-bottom: 1px solid var(--borde); }
+    .indicador:nth-child(2) { border-left: 0; }
+    .control-rejilla { grid-template-columns: minmax(0, 1fr); }
+    .control-accesos { grid-template-columns: minmax(0, 1fr); }
+    .acceso-gestion { border-left: 0; border-top: 1px solid var(--borde); }
+    .acceso-gestion:first-child { border-top: 0; }
+    .form-plato { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 575.98px) {
+    /* Administrador en el teléfono */
+    .indicador { padding: 1rem .9rem; }
+    .indicador dt { font-size: .72rem; line-height: 1.25; }
+    .indicador dt .bi { display: none; }
+    .indicador dd { font-size: 2rem; }
+    .control-panel { padding: 1.25rem 1rem; }
+    .barra { grid-template-columns: minmax(0, 1fr) 2.5rem; row-gap: .4rem; }
+    .barra-pista { grid-column: 1 / -1; grid-row: 2; }
+    .gestion-cabecera .btn { width: 100%; justify-content: center; }
+    .gestion-tabla { padding-inline: .75rem; }
+    .buscador { flex-basis: 100%; }
     .card-ebano { padding: 1.25rem; }
     .nav-usuario .btn { flex: 1 1 auto; }
     .tabla-demo > :not(caption) > * > * { padding-inline: .75rem; }
