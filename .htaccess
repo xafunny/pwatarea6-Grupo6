@@ -1,0 +1,7 @@
+# No listar el contenido de las carpetas
+Options -Indexes
+
+# Bloquear archivos ocultos, SQL y Markdown (el contenido de .superpowers y docs no debe ser público)
+<FilesMatch "(^\.|\.(sql|md)$)">
+    Require all denied
+</FilesMatch>
