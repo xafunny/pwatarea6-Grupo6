@@ -38,10 +38,17 @@ function crear_pedidos(int $cliente_id, array $items, ?int $camarero_id = null):
     $pdo = conectar();
     $buscar_plato = $pdo->prepare('SELECT name, available FROM dishes WHERE id = ?');
 
-    // 1) Validación: cantidades en rango y platos que existen y están disponibles
+    // 1) Validación: sin platos repetidos, cantidades en rango y platos que existen y están disponibles
+    $vistos = []; // ids ya revisados: [id => true]
     foreach ($items as $item) {
         $plato_id = (int) ($item['dish_id'] ?? 0);
         $cantidad = (int) ($item['quantity'] ?? 0);
+
+        // Un mismo plato en dos filas saltaría el tope de 20 (ej: items[1]=20&items[01]=20 llegan como ids distintos)
+        if (isset($vistos[$plato_id])) {
+            throw new InvalidArgumentException('Un plato aparece repetido en el pedido.');
+        }
+        $vistos[$plato_id] = true;
 
         if ($cantidad < CANTIDAD_MINIMA || $cantidad > CANTIDAD_MAXIMA) {
             throw new InvalidArgumentException(

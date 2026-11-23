@@ -99,6 +99,8 @@ comprobar('un carrito mixto (válido + inválido) lanza',
     lanza(fn() => crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1], ['dish_id' => 99999, 'quantity' => 1]])));
 $demasiados = array_fill(0, 31, ['dish_id' => 1, 'quantity' => 1]);
 comprobar('crear_pedidos con más de 30 platos distintos lanza', lanza(fn() => crear_pedidos($cliente_id, $demasiados)));
+comprobar('crear_pedidos con un plato repetido lanza',
+    lanza(fn() => crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 15], ['dish_id' => 1, 'quantity' => 15]])));
 comprobar('las entradas inválidas no cambian COUNT(*)', contar_pedidos() === $antes);
 
 // hace_cuanto()
