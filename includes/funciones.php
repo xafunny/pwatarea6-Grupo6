@@ -26,10 +26,22 @@ const TRANSICIONES = [
     ],
 ];
 
-/** Escapa texto para imprimirlo en HTML (evita XSS). Acepta null. */
+/**
+ * Escapa texto para imprimirlo en HTML (evita XSS). Acepta null.
+ * ENT_SUBSTITUTE: si llega UTF-8 inválido se reemplaza por "�" en vez de devolver una cadena vacía.
+ */
 function e(?string $s): string
 {
-    return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars($s ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/** SVG de la marca de Ébano (un rombo dorado), para la barra de navegación y las páginas de acceso. */
+function marca_ebano(): string
+{
+    return '<svg class="marca-icono" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">'
+        . '<path d="M12 1.8 21 12l-9 10.2L3 12z" fill="none" stroke="currentColor" stroke-width="1.4"/>'
+        . '<path d="M12 7.2 16.2 12 12 16.8 7.8 12z" fill="currentColor"/>'
+        . '</svg>';
 }
 
 /** Construye una URL del sitio anteponiendo BASE_URL (ej: url('admin/x.php')). */

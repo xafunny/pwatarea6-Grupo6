@@ -1,0 +1,698 @@
+/* ==========================================================================
+   Ébano · Hoja de estilos propia ("Noche elegante")
+   Se carga DESPUÉS de Bootstrap 5.3.3 para personalizarlo.
+   Índice:
+     1. Tokens (variables de diseño y overrides de Bootstrap)
+     2. Base (tipografía, fondo, selección, foco, scrollbar)
+     3. Overrides de Bootstrap (botones, formularios, alertas, tablas, navbar)
+     4. Componentes propios (marca, tarjetas, KPI, estados, títulos, chips)
+     5. Layout por rol y por página (acceso, 403, chef...)
+     6. Utilidades
+     7. Responsive y movimiento reducido
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. TOKENS
+   La paleta vive en variables: cambiar un color aquí lo cambia en todo el sitio.
+   ========================================================================== */
+:root,
+[data-bs-theme="dark"] {
+    /* Paleta base */
+    --fondo: #0E0E11;
+    --superficie: #16161B;
+    --elevada: #1E1E25;
+    --borde: #2A2A33;
+    --borde-fuerte: #3A3A45;
+    --texto: #ECE6D8;
+    --texto-2: #A39E93;           /* secundario: 7.3:1 sobre el fondo, cumple AA */
+    --oro: #C9A45C;
+    --oro-claro: #E2C78C;
+    --oro-rgb: 201, 164, 92;
+    --tinta-sobre-oro: #17130B;   /* texto encima de un botón dorado (contraste 8:1) */
+
+    /* Estados del pedido: tonos apagados para que no griten sobre lo oscuro */
+    --estado-pendiente: #E0B252;  /* ámbar */
+    --estado-preparando: #D9925F; /* cobre */
+    --estado-listo: #9EBD98;      /* verde salvia */
+    --estado-servido: #ADA89E;    /* gris piedra */
+    --peligro: #E08A7E;
+    --exito: #9EBD98;
+
+    /* Tipografía */
+    --fuente-titulos: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --fuente-texto: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Forma, profundidad y movimiento */
+    --radio-sm: 8px;
+    --radio: 14px;
+    --radio-lg: 22px;
+    --sombra: 0 10px 30px -12px rgba(0, 0, 0, .65), 0 2px 6px rgba(0, 0, 0, .35);
+    --sombra-alta: 0 24px 50px -18px rgba(0, 0, 0, .8), 0 4px 12px rgba(0, 0, 0, .4);
+    --curva: cubic-bezier(.22, 1, .36, 1); /* salida exponencial suave */
+    --rapido: .18s;
+    --medio: .35s;
+
+    /* Overrides de las variables de Bootstrap (modo oscuro) */
+    --bs-body-bg: var(--fondo);
+    --bs-body-bg-rgb: 14, 14, 17;
+    --bs-body-color: var(--texto);
+    --bs-body-color-rgb: 236, 230, 216;
+    --bs-body-font-family: var(--fuente-texto);
+    --bs-emphasis-color: #FFF8EA;
+    --bs-heading-color: var(--texto);
+    --bs-secondary-color: var(--texto-2);
+    --bs-secondary-bg: var(--superficie);
+    --bs-tertiary-bg: var(--elevada);
+    --bs-border-color: var(--borde);
+    --bs-border-color-translucent: rgba(236, 230, 216, .09);
+    --bs-border-radius: var(--radio-sm);
+    --bs-border-radius-lg: var(--radio);
+    --bs-primary: var(--oro);
+    --bs-primary-rgb: var(--oro-rgb);
+    --bs-link-color: var(--oro-claro);
+    --bs-link-color-rgb: 226, 199, 140;
+    --bs-link-hover-color: #F1DDB0;
+    --bs-link-hover-color-rgb: 241, 221, 176;
+    --bs-focus-ring-color: rgba(var(--oro-rgb), .45);
+    --bs-form-valid-color: var(--exito);
+    --bs-form-valid-border-color: var(--exito);
+    --bs-form-invalid-color: var(--peligro);
+    --bs-form-invalid-border-color: var(--peligro);
+    --bs-code-color: var(--oro-claro);
+}
+
+
+/* ==========================================================================
+   2. BASE
+   ========================================================================== */
+body {
+    /* Un halo cálido muy tenue arriba a la derecha, como una lámpara sobre la sala */
+    background:
+        radial-gradient(1100px 520px at 88% -8%, rgba(var(--oro-rgb), .07), transparent 62%),
+        var(--fondo);
+    background-attachment: fixed;
+    color: var(--texto);
+    font-family: var(--fuente-texto);
+    font-size: 1rem;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+main { flex: 1 0 auto; }
+main:focus { outline: none; } /* destino del enlace "Saltar al contenido" */
+
+h1, h2, h3, .serif {
+    font-family: var(--fuente-titulos);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
+    text-wrap: balance;
+}
+h4, h5, h6 { font-family: var(--fuente-texto); font-weight: 700; }
+
+p { text-wrap: pretty; }
+
+a { text-underline-offset: .2em; text-decoration-thickness: 1px; }
+
+::selection { background: rgba(var(--oro-rgb), .35); color: #FFF8EA; }
+
+input, textarea { caret-color: var(--oro); }
+
+/* Foco visible en dorado para TODO lo que se maneja con teclado */
+:focus-visible {
+    outline: 2px solid var(--oro-claro);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* Barra de desplazamiento a juego con la paleta (Firefox y Chromium) */
+html { scrollbar-color: var(--borde-fuerte) var(--fondo); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--fondo); }
+::-webkit-scrollbar-thumb { background: var(--borde-fuerte); border-radius: 10px; border: 2px solid var(--fondo); }
+
+/* Enlace oculto que aparece al tabular: salta la barra de navegación */
+.saltar-contenido {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 2000;
+    padding: .6rem 1rem;
+    background: var(--oro);
+    color: var(--tinta-sobre-oro);
+    font-weight: 700;
+    border-radius: var(--radio-sm);
+    text-decoration: none;
+}
+.saltar-contenido:focus { top: 1rem; }
+
+
+/* ==========================================================================
+   3. OVERRIDES DE BOOTSTRAP
+   ========================================================================== */
+
+/* ---- Botones ---- */
+.btn {
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: 999px;
+    --bs-btn-padding-x: 1.25rem;
+    --bs-btn-focus-box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .4);
+    letter-spacing: .01em;
+    transition: transform var(--rapido) var(--curva), background-color var(--rapido), border-color var(--rapido),
+                color var(--rapido), box-shadow var(--rapido);
+}
+.btn:active { transform: translateY(1px) scale(.985); } /* "presión" al hacer clic */
+.btn-lg { --bs-btn-padding-y: .8rem; --bs-btn-font-size: 1rem; }
+.btn-sm { --bs-btn-padding-x: .9rem; }
+
+/* Botón principal: oro sólido con texto oscuro */
+.btn-oro {
+    --bs-btn-color: var(--tinta-sobre-oro);
+    --bs-btn-bg: var(--oro);
+    --bs-btn-border-color: var(--oro);
+    --bs-btn-hover-color: var(--tinta-sobre-oro);
+    --bs-btn-hover-bg: var(--oro-claro);
+    --bs-btn-hover-border-color: var(--oro-claro);
+    --bs-btn-active-color: var(--tinta-sobre-oro);
+    --bs-btn-active-bg: #B8934D;
+    --bs-btn-active-border-color: #B8934D;
+    --bs-btn-disabled-color: var(--tinta-sobre-oro);
+    --bs-btn-disabled-bg: var(--oro);
+    --bs-btn-disabled-border-color: var(--oro);
+    box-shadow: 0 6px 18px -8px rgba(var(--oro-rgb), .55);
+}
+.btn-oro:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(var(--oro-rgb), .7); }
+
+/* Botón secundario: contorno fino que se ilumina en oro */
+.btn-contorno {
+    --bs-btn-color: var(--texto);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: var(--borde-fuerte);
+    --bs-btn-hover-color: var(--oro-claro);
+    --bs-btn-hover-bg: rgba(var(--oro-rgb), .08);
+    --bs-btn-hover-border-color: var(--oro);
+    --bs-btn-active-color: var(--oro-claro);
+    --bs-btn-active-bg: rgba(var(--oro-rgb), .14);
+    --bs-btn-active-border-color: var(--oro);
+    --bs-btn-disabled-color: var(--texto-2);
+    --bs-btn-disabled-border-color: var(--borde);
+}
+
+/* ---- Formularios ---- */
+.form-label {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--texto);
+    margin-bottom: .4rem;
+}
+.form-text { color: var(--texto-2); font-size: .8125rem; }
+
+.form-control,
+.form-select {
+    background-color: #121216;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-sm);
+    color: var(--texto);
+    padding: .7rem .9rem;
+    transition: border-color var(--rapido), box-shadow var(--rapido), background-color var(--rapido);
+}
+.form-control::placeholder { color: #8F8A80; opacity: 1; } /* 5:1 sobre el campo */
+.form-control:hover,
+.form-select:hover { border-color: var(--borde-fuerte); }
+.form-control:focus,
+.form-select:focus {
+    background-color: #141419;
+    border-color: var(--oro);
+    color: var(--texto);
+    box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .22);
+}
+.form-control:focus-visible,
+.form-select:focus-visible { outline: none; } /* el anillo dorado del box-shadow ya marca el foco */
+.form-control:disabled { background-color: var(--superficie); color: var(--texto-2); }
+
+/* El autocompletado del navegador no debe pintar los campos de amarillo claro */
+.form-control:-webkit-autofill {
+    -webkit-text-fill-color: var(--texto);
+    -webkit-box-shadow: 0 0 0 100px #141419 inset;
+    caret-color: var(--oro);
+}
+
+.form-check-input { background-color: #121216; border-color: var(--borde-fuerte); }
+.form-check-input:checked { background-color: var(--oro); border-color: var(--oro); }
+.form-check-input:focus { border-color: var(--oro); box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .25); }
+
+.invalid-feedback { font-size: .8125rem; }
+
+/* ---- Alertas (flash): fondo tintado, borde del mismo tono ---- */
+.alert {
+    --bs-alert-border-radius: var(--radio-sm);
+    border-width: 1px;
+    font-size: .9375rem;
+}
+.alert-success { --bs-alert-bg: rgba(158, 189, 152, .1); --bs-alert-border-color: rgba(158, 189, 152, .35); --bs-alert-color: #C4DABF; }
+.alert-danger  { --bs-alert-bg: rgba(224, 138, 126, .1); --bs-alert-border-color: rgba(224, 138, 126, .38); --bs-alert-color: #F0B5AC; }
+.alert-warning { --bs-alert-bg: rgba(224, 178, 82, .1);  --bs-alert-border-color: rgba(224, 178, 82, .35);  --bs-alert-color: #EED29A; }
+.alert-info    { --bs-alert-bg: rgba(var(--oro-rgb), .08); --bs-alert-border-color: rgba(var(--oro-rgb), .3); --bs-alert-color: var(--oro-claro); }
+.alert .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
+
+/* ---- Navbar: vidrio oscuro con desenfoque, para que el contenido se intuya debajo al hacer scroll ---- */
+.navbar-ebano {
+    background: rgba(14, 14, 17, .72);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+    backdrop-filter: saturate(140%) blur(14px);
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    padding-block: .75rem;
+    --bs-navbar-color: var(--texto-2);
+    --bs-navbar-hover-color: var(--texto);
+    --bs-navbar-active-color: var(--oro-claro);
+    --bs-navbar-toggler-border-color: var(--borde-fuerte);
+}
+.navbar-ebano .nav-link {
+    position: relative;
+    font-weight: 500;
+    font-size: .9375rem;
+    padding-inline: .85rem !important;
+    border-radius: 999px;
+    transition: color var(--rapido), background-color var(--rapido);
+}
+.navbar-ebano .nav-link .bi { margin-right: .3rem; opacity: .85; }
+.navbar-ebano .nav-link:hover { background: rgba(236, 230, 216, .05); }
+.navbar-ebano .nav-link.active { background: rgba(var(--oro-rgb), .1); }
+.navbar-ebano .navbar-toggler { color: var(--texto); font-size: 1.5rem; padding: .25rem .6rem; border-radius: var(--radio-sm); }
+.navbar-ebano .navbar-toggler:focus { box-shadow: none; }          /* con mouse, sin anillo */
+.navbar-ebano .navbar-toggler:focus-visible { box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .45); } /* con teclado, sí */
+
+.nav-usuario { display: flex; align-items: center; gap: .75rem; }
+.nav-usuario-nombre { font-weight: 600; font-size: .9375rem; color: var(--texto); }
+
+/* ---- Tablas ---- */
+.table { --bs-table-bg: transparent; --bs-table-color: var(--texto); --bs-table-border-color: var(--borde); }
+
+
+/* ==========================================================================
+   4. COMPONENTES PROPIOS (se reutilizan en todas las páginas)
+   ========================================================================== */
+
+/* ---- Marca: rombo dorado + "Ébano" en serif ---- */
+.marca {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    color: var(--texto);
+    text-decoration: none;
+}
+.marca:hover { color: var(--texto); }
+.marca-icono { color: var(--oro); flex-shrink: 0; transition: transform var(--medio) var(--curva); }
+.marca:hover .marca-icono { transform: rotate(45deg); }
+.marca-nombre {
+    font-family: var(--fuente-titulos);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    line-height: 1;
+}
+
+/* ---- Insignia del rol en la barra ---- */
+.badge-rol {
+    display: inline-block;
+    padding: .2rem .6rem;
+    border: 1px solid rgba(var(--oro-rgb), .45);
+    border-radius: 999px;
+    color: var(--oro-claro);
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+/* ---- Tarjeta base ---- */
+.card-ebano {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: 1.5rem;
+    transition: border-color var(--medio) var(--curva), transform var(--medio) var(--curva), box-shadow var(--medio) var(--curva);
+}
+/* Solo las tarjetas que son enlace o que piden reacción se elevan al pasar el mouse */
+a.card-ebano,
+.card-ebano.interactiva { color: inherit; text-decoration: none; }
+a.card-ebano:hover,
+.card-ebano.interactiva:hover {
+    border-color: rgba(var(--oro-rgb), .55);
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-alta);
+}
+
+/* ---- KPI: etiqueta, número grande en serif e icono ---- */
+.kpi {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "etiqueta icono" "valor icono" "detalle detalle";
+    align-items: start;
+    gap: .25rem 1rem;
+}
+.kpi-etiqueta { grid-area: etiqueta; color: var(--texto-2); font-size: .8125rem; font-weight: 600; }
+.kpi-valor {
+    grid-area: valor;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2.25rem, 3vw + 1rem, 3rem);
+    font-weight: 600;
+    line-height: 1;
+    color: var(--texto);
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.kpi-icono {
+    grid-area: icono;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 12px;
+    background: rgba(var(--oro-rgb), .1);
+    border: 1px solid rgba(var(--oro-rgb), .25);
+    color: var(--oro);
+    font-size: 1.25rem;
+}
+.kpi-detalle { grid-area: detalle; color: var(--texto-2); font-size: .8125rem; margin-top: .5rem; }
+
+/* ---- Insignia de estado del pedido (el sufijo sale de clase_estado()) ---- */
+.badge-estado {
+    --tono: var(--estado-servido);
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent);
+    background: color-mix(in srgb, var(--tono) 12%, transparent);
+    color: var(--tono);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.badge-estado::before { /* punto de color: el estado no depende solo del texto */
+    content: "";
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+.badge-estado.pendiente  { --tono: var(--estado-pendiente); }
+.badge-estado.preparando { --tono: var(--estado-preparando); }
+.badge-estado.listo      { --tono: var(--estado-listo); }
+.badge-estado.servido    { --tono: var(--estado-servido); }
+
+/* ---- Título de sección: antetítulo dorado en versalitas + título serif ---- */
+.titulo-seccion { margin-bottom: 2rem; }
+.titulo-seccion .antetitulo {
+    display: block;
+    margin-bottom: .5rem;
+    color: var(--oro);
+    font-family: var(--fuente-texto);
+    font-size: .78rem;
+    font-weight: 700;
+    font-variant: small-caps;
+    letter-spacing: .14em;
+    text-transform: lowercase; /* con small-caps se ve como versalitas reales */
+}
+.titulo-seccion h1,
+.titulo-seccion h2 { margin: 0; }
+.titulo-seccion h1 { font-size: clamp(2.25rem, 3.5vw + 1rem, 3.5rem); }
+.titulo-seccion h2 { font-size: clamp(1.85rem, 2.4vw + 1rem, 2.6rem); }
+.titulo-seccion p { color: var(--texto-2); margin: .75rem 0 0; max-width: 60ch; }
+
+/* ---- Tabla Ébano: filas espaciadas, cabecera discreta, números tabulares ---- */
+.tabla-ebano {
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: rgba(var(--oro-rgb), .05);
+    --bs-table-hover-color: var(--texto);
+    margin-bottom: 0;
+    font-variant-numeric: tabular-nums;
+}
+.tabla-ebano > thead th {
+    color: var(--texto-2);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border-bottom-color: var(--borde-fuerte);
+    padding-block: .8rem;
+    white-space: nowrap;
+}
+.tabla-ebano > tbody > tr > td { padding-block: .85rem; vertical-align: middle; border-bottom-color: var(--borde); }
+.tabla-ebano > tbody > tr:last-child > td { border-bottom: 0; }
+.tabla-ebano > caption { color: var(--texto-2); font-size: .8125rem; caption-side: bottom; padding-top: .75rem; }
+
+/* ---- Chip: píldora de filtro por categoría ---- */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem 1rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--texto-2);
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--rapido), border-color var(--rapido), background-color var(--rapido), transform var(--rapido) var(--curva);
+}
+.chip:hover { color: var(--texto); border-color: rgba(var(--oro-rgb), .6); }
+.chip:active { transform: scale(.97); }
+.chip.activo,
+.chip[aria-pressed="true"] {
+    background: var(--oro);
+    border-color: var(--oro);
+    color: var(--tinta-sobre-oro);
+}
+
+/* ---- Ganchos de animación (GSAP en app.js) ----
+   Siempre son visibles en CSS: si JavaScript no carga, el contenido se ve igual. */
+.anim-item,
+.revelar { opacity: 1; }
+
+/* ---- Pie del sitio ---- */
+.pie {
+    margin-top: 4rem;
+    border-top: 1px solid var(--borde);
+    padding-block: 2rem;
+}
+.pie-contenido { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+.marca-pie .marca-nombre { font-size: 1.35rem; }
+.pie-texto { color: var(--texto-2); font-size: .875rem; }
+
+.zona-flash { padding-top: 1.5rem; }
+
+
+/* ==========================================================================
+   5. LAYOUT POR ROL Y POR PÁGINA
+   El <body> recibe $clase_body: rol-admin, rol-chef, rol-camarero, rol-cliente,
+   pagina-acceso (login y registro) o pagina-403.
+   ========================================================================== */
+.rol-admin main,
+.rol-camarero main,
+.rol-cliente main { padding-block: 2.5rem 1rem; }
+
+/* El chef trabaja con el tablero a todo el ancho: menos margen arriba y halo apagado */
+.rol-chef main { padding-block: 1.5rem 1rem; }
+.rol-chef { background: var(--fondo); }
+
+/* ---- Acceso (login y registro): foto de ambiente | formulario ---- */
+.pagina-acceso { background: var(--fondo); }
+
+.acceso {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+.acceso-ambiente {
+    position: relative;
+    display: none; /* en móvil solo se muestra el formulario */
+    overflow: hidden;
+    isolation: isolate;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(2rem, 4vw, 3.5rem);
+}
+.acceso-foto {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.02);
+    transition: transform 1.2s var(--curva);
+}
+.acceso-ambiente:hover .acceso-foto { transform: scale(1.045); }
+/* Degradado: oscurece abajo para leer el lema y funde el borde derecho con el panel */
+.acceso-ambiente::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(180deg, rgba(14, 14, 17, .55) 0%, rgba(14, 14, 17, .05) 30%, rgba(14, 14, 17, .25) 55%, rgba(14, 14, 17, .92) 100%),
+        linear-gradient(90deg, transparent 70%, rgba(14, 14, 17, .7) 100%);
+}
+.marca-grande .marca-icono { width: 28px; height: 28px; }
+.marca-grande .marca-nombre { font-size: 2rem; }
+
+.acceso-lema {
+    margin: 0;
+    max-width: 18ch;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2.4rem, 3.4vw + .5rem, 3.75rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    color: #FFF8EA;
+    text-shadow: 0 2px 24px rgba(0, 0, 0, .45);
+}
+.acceso-lema em { color: var(--oro-claro); font-style: italic; }
+
+.acceso-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(2rem, 5vw, 4rem) 1rem;
+    background:
+        radial-gradient(700px 420px at 100% 0%, rgba(var(--oro-rgb), .06), transparent 65%),
+        var(--fondo);
+}
+.acceso-caja { width: 100%; max-width: 27rem; }
+.acceso-marca-movil { margin-bottom: 2.5rem; }
+
+.acceso-titulo { font-size: clamp(2.3rem, 2.5vw + 1.4rem, 3rem); margin-bottom: .5rem; }
+.acceso-subtitulo { color: var(--texto-2); margin-bottom: 2rem; }
+.acceso-alterno { margin: 1.5rem 0 0; color: var(--texto-2); font-size: .9375rem; text-align: center; }
+.acceso-alterno a { font-weight: 600; }
+
+/* Cuentas de demostración: un panel plegable discreto bajo el formulario */
+.demo {
+    margin-top: 2rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    overflow: hidden;
+}
+.demo-boton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .9rem 1.1rem;
+    background: transparent;
+    border: 0;
+    color: var(--texto);
+    font-size: .9375rem;
+    font-weight: 600;
+    text-align: left;
+}
+.demo-boton .bi-person-badge { color: var(--oro); margin-right: .35rem; }
+.demo-boton:hover { background: rgba(236, 230, 216, .03); }
+.demo-boton:focus-visible { outline-offset: -3px; }
+.demo-flecha { transition: transform var(--medio) var(--curva); color: var(--texto-2); }
+.demo-boton[aria-expanded="true"] .demo-flecha { transform: rotate(180deg); }
+.tabla-demo { font-size: .875rem; }
+.tabla-demo > :not(caption) > * > * { padding-inline: 1.1rem; }
+.tabla-demo > caption { padding-inline: 1.1rem; padding-bottom: .9rem; }
+
+/* ---- Página 403 ---- */
+.error-403 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 62vh;
+    padding-block: 4rem;
+}
+.error-codigo {
+    margin: 0;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(6rem, 18vw, 11rem);
+    font-weight: 500;
+    line-height: .9;
+    letter-spacing: -0.03em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--oro); /* número solo con contorno dorado, como grabado */
+}
+.error-titulo { font-size: clamp(2rem, 3vw + 1rem, 3rem); margin: 1.25rem 0 .75rem; }
+.error-texto { color: var(--texto-2); max-width: 46ch; margin-bottom: 2rem; }
+
+
+/* ==========================================================================
+   6. UTILIDADES
+   ========================================================================== */
+.texto-2 { color: var(--texto-2) !important; }
+.texto-oro { color: var(--oro) !important; }
+.fuente-serif { font-family: var(--fuente-titulos) !important; }
+.numeros { font-variant-numeric: tabular-nums; }
+.precio {
+    font-family: var(--fuente-titulos);
+    font-weight: 600;
+    color: var(--oro-claro);
+    font-variant-numeric: lining-nums;
+}
+.borde-ebano { border: 1px solid var(--borde) !important; }
+.fondo-superficie { background: var(--superficie) !important; }
+.fondo-elevado { background: var(--elevada) !important; }
+
+
+/* ==========================================================================
+   7. RESPONSIVE Y MOVIMIENTO REDUCIDO
+   ========================================================================== */
+
+/* Escritorio: el acceso pasa a dos columnas y aparece la foto */
+@media (min-width: 992px) {
+    .acceso { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+    .acceso-ambiente { display: flex; }
+    .acceso-marca-movil { display: none; }
+    .acceso-panel { padding-inline: 3rem; }
+}
+
+/* Móvil y tableta: menú desplegado en bloque, usuario abajo */
+@media (max-width: 991.98px) {
+    .navbar-ebano .navbar-collapse { padding-top: .75rem; }
+    .navbar-ebano .nav-link { padding-block: .7rem !important; }
+    .nav-usuario {
+        flex-wrap: wrap;
+        margin-top: .75rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--borde);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .card-ebano { padding: 1.25rem; }
+    .nav-usuario .btn { flex: 1 1 auto; }
+    .tabla-demo > :not(caption) > * > * { padding-inline: .75rem; }
+}
+
+/* Quien pide menos movimiento al sistema operativo no ve transiciones ni zoom */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .acceso-ambiente:hover .acceso-foto,
+    a.card-ebano:hover,
+    .card-ebano.interactiva:hover,
+    .btn-oro:hover { transform: none; }
+}

@@ -28,7 +28,7 @@ comprobar('e() escapa HTML', e('<script>"x"</script>') === '&lt;script&gt;&quot;
 comprobar('e(null) devuelve cadena vacía', e(null) === '');
 comprobar('dinero(12.5) === $12.50', dinero(12.5) === '$12.50');
 comprobar('dinero(1234.5) usa separador de miles', dinero(1234.5) === '$1,234.50');
-comprobar('url() antepone BASE_URL', url('admin/x.php') === '/pwatarea6/admin/x.php');
+comprobar('url() antepone BASE_URL', url('admin/x.php') === BASE_URL . '/admin/x.php');
 
 // Estados y roles
 comprobar('ESTADOS tiene 4 estados en orden', ESTADOS === ['Pending', 'Preparing', 'Ready to serve', 'Served']);
