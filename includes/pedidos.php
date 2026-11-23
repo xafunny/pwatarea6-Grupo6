@@ -134,7 +134,8 @@ function pedidos_cocina(): array
 
 /**
  * Tiempo que lleva esperando una comanda, para el ticket del chef:
- * 0 -> 'Recién entrada', 7 -> '7 min', 65 -> '1 h 05 min'. cocina.js repite esta misma regla.
+ * 0 -> 'Recién entrada', 7 -> '7 min', 65 -> '1 h 05 min'.
+ * La API manda este texto ya armado (campo 'espera'), así cocina.js no repite la regla.
  */
 function texto_espera(int $minutos): string
 {

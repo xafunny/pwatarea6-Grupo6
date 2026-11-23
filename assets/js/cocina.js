@@ -22,6 +22,8 @@ let tokenCsrf = '';               // de <meta name="csrf-token">
 let ultimaActualizacion = Date.now();
 let sinConexion = false;
 let cargando = false;             // evita dos GET a la vez (botón + temporizador)
+let refrescoPendiente = false;    // alguien pidió refrescar mientras había un GET en curso
+let cambiosLocales = 0;           // sube con cada cambio de estado enviado: detecta respuestas viejas
 let sesionTerminada = false;      // si el servidor nos manda al login, se deja de consultar
 let movimientoPermitido = false;  // lo activa gsap.matchMedia si el usuario no pidió reducir movimiento
 let temporizadorAviso = null;     // setTimeout que esconde el aviso flotante
@@ -209,12 +211,12 @@ function actualizarIndicador() {
 }
 
 /**
- * Lee la respuesta de la API como JSON. Si el servidor no devolvió JSON (por ejemplo,
- * la sesión caducó y fetch siguió la redirección al login) devuelve null.
+ * Lee la respuesta de la API como JSON. Si el cuerpo no es JSON (un 502 del hosting,
+ * un error de PHP con HTML...) devuelve null: quien llama decide qué hacer.
  */
 async function leerJson(respuesta) {
     const tipo = respuesta.headers.get('Content-Type') || '';
-    if (respuesta.redirected || !tipo.includes('application/json')) {
+    if (!tipo.includes('application/json')) {
         return null;
     }
     try {
@@ -224,41 +226,67 @@ async function leerJson(respuesta) {
     }
 }
 
+/**
+ * true solo si el servidor dijo claramente que la sesión ya no sirve: nos redirigió al login
+ * o respondió 401/403. Un 500 o un 502 pasajero NO cuenta: ahí se sigue reintentando.
+ */
+function esSesionPerdida(respuesta) {
+    return respuesta.redirected || respuesta.status === 401 || respuesta.status === 403;
+}
+
 /** Marca la sesión como terminada: deja de consultar y avisa cómo seguir. */
-function terminarSesion() {
+function terminarSesion(mensaje) {
     sesionTerminada = true;
-    mostrarAviso('Tu sesión terminó. Recarga la página para volver a entrar.', 'error');
+    mostrarAviso(mensaje || 'Tu sesión terminó. Recarga la página para volver a entrar.', 'error');
     actualizarIndicador();
 }
 
-/** Pide las comandas a la API (GET) y redibuja el tablero. Un fallo de red no rompe lo que ya se ve. */
+/**
+ * Pide las comandas a la API (GET) y redibuja el tablero. Un fallo de red no rompe lo que ya se ve.
+ * Si ya hay una consulta en curso, no lanza otra: deja anotado que hace falta repetirla al terminar
+ * (refrescoPendiente). Si mientras tanto el chef cambió una comanda (cambiosLocales), la respuesta
+ * en curso pudo salir ANTES del cambio: se descarta y se vuelve a pedir, para no pintar un estado viejo.
+ */
 async function cargarPedidos() {
-    if (cargando || sesionTerminada) {
+    if (sesionTerminada) {
+        return;
+    }
+    if (cargando) {
+        refrescoPendiente = true;
         return;
     }
     cargando = true;
+    const cambiosAlEmpezar = cambiosLocales;
     try {
         const respuesta = await fetch(urlApi, {
             headers: { Accept: 'application/json' },
             credentials: 'same-origin',
             cache: 'no-store'
         });
-        const datos = await leerJson(respuesta);
-        if (datos === null) {
+        if (esSesionPerdida(respuesta)) {
             terminarSesion();
             return;
         }
-        if (!respuesta.ok || !Array.isArray(datos.pedidos)) {
-            throw new Error(datos.mensaje || 'Respuesta inesperada');
+        const datos = await leerJson(respuesta);
+        if (datos === null || !respuesta.ok || !Array.isArray(datos.pedidos)) {
+            throw new Error('Respuesta inesperada del servidor');
+        }
+        if (cambiosAlEmpezar !== cambiosLocales) {
+            refrescoPendiente = true; // datos de antes del último cambio: no se pintan
+            return;
         }
         renderizarTablero(datos.pedidos);
         ultimaActualizacion = Date.now();
         sinConexion = false;
     } catch (error) {
-        sinConexion = true; // el tablero se queda como estaba y el próximo intervalo reintenta
+        sinConexion = true; // el tablero se queda como estaba y se reintenta en el próximo intervalo
     } finally {
         cargando = false;
         actualizarIndicador();
+        if (refrescoPendiente && !sesionTerminada) {
+            refrescoPendiente = false;
+            cargarPedidos();
+        }
     }
 }
 
@@ -280,12 +308,14 @@ async function avanzarEstado(id, estado, boton) {
             body: JSON.stringify({ id: id, estado: estado })
         });
         const datos = await leerJson(respuesta);
-        if (datos === null) {
-            // 403 de CSRF (texto plano) o redirección al login: la sesión ya no es válida
-            terminarSesion();
+        if (esSesionPerdida(respuesta)) {
+            // Sin sesión, rol sin permiso o token CSRF vencido: la API lo explica en JSON
+            terminarSesion(datos && datos.mensaje);
             return;
         }
-        if (!datos.ok) {
+        if (datos === null) {
+            mostrarAviso('No se pudo guardar el cambio. Inténtalo de nuevo.', 'error');
+        } else if (!datos.ok) {
             mostrarAviso(datos.mensaje, 'error');
         }
     } catch (error) {
@@ -293,6 +323,8 @@ async function avanzarEstado(id, estado, boton) {
         boton.disabled = false;
         return;
     }
+    // Cualquier GET que ya estuviera en camino salió antes de este cambio: se marca como viejo
+    cambiosLocales++;
     await cargarPedidos(); // con éxito o con 422, se muestra lo que hay de verdad en la BD
 }
 

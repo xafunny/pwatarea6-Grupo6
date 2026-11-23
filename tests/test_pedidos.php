@@ -158,21 +158,32 @@ $estados_cocina = ['Pending', 'Preparing', 'Ready to serve'];
 $solo_cocina = true;
 $hay_servido = false;
 $ordenado = true;
+$hay_empate = false; // los 2 platos creados juntos arriba comparten created_at: prueban el desempate
 foreach ($cocina as $i => $fila_cocina) {
+    if ($i > 0 && $cocina[$i - 1]['created_at'] === $fila_cocina['created_at']) {
+        $hay_empate = true;
+    }
     if (!in_array($fila_cocina['status'], $estados_cocina, true)) {
         $solo_cocina = false;
     }
     if ($fila_cocina['status'] === 'Served') {
         $hay_servido = true;
     }
-    if ($i > 0 && $cocina[$i - 1]['created_at'] > $fila_cocina['created_at']) {
-        $ordenado = false;
+    if ($i > 0) {
+        $anterior = $cocina[$i - 1];
+        // Más viejo primero; si se crearon en el mismo segundo, desempata el id menor
+        $mismo_momento = $anterior['created_at'] === $fila_cocina['created_at'];
+        if ($anterior['created_at'] > $fila_cocina['created_at']
+            || ($mismo_momento && (int) $anterior['id'] > (int) $fila_cocina['id'])) {
+            $ordenado = false;
+        }
     }
 }
 comprobar('pedidos_cocina devuelve al menos un pedido', count($cocina) > 0);
 comprobar('pedidos_cocina solo trae Pending, Preparing y Ready to serve', $solo_cocina);
 comprobar('pedidos_cocina no incluye pedidos Served', !$hay_servido);
-comprobar('pedidos_cocina ordena por created_at ascendente', $ordenado);
+comprobar('pedidos_cocina tiene pedidos con el mismo created_at (caso de desempate)', $hay_empate);
+comprobar('pedidos_cocina ordena por created_at ascendente y desempata por id', $ordenado);
 comprobar('pedidos_cocina trae plato, cliente, camarero y minutos',
     isset($cocina[0]) && array_key_exists('camarero', $cocina[0])
     && isset($cocina[0]['plato'], $cocina[0]['cliente'], $cocina[0]['minutos']));
