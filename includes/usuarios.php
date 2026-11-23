@@ -146,11 +146,22 @@ function obtener_clientes(): array
  */
 function es_cliente(int $id): bool
 {
+    return nombre_cliente($id) !== null;
+}
+
+/**
+ * Devuelve el nombre de usuario si el id es de un usuario con rol Client; si no, null.
+ * Valida y trae el nombre en una sola consulta: nuevo_pedido.php la usa para comprobar el
+ * cliente elegido y armar el mensaje "Pedido registrado para ...".
+ */
+function nombre_cliente(int $id): ?string
+{
     $st = conectar()->prepare(
-        "SELECT COUNT(*) FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? AND r.name = 'Client'"
+        "SELECT u.username FROM users u JOIN roles r ON r.id = u.role_id WHERE u.id = ? AND r.name = 'Client'"
     );
     $st->execute([$id]);
-    return (int) $st->fetchColumn() === 1;
+    $nombre = $st->fetchColumn();
+    return $nombre === false ? null : (string) $nombre;
 }
 
 /** Lista los roles [id, name] en el orden en que se crearon. */

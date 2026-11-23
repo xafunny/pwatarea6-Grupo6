@@ -1446,7 +1446,8 @@ a.card-ebano:hover,
     border-radius: var(--radio);
     background: var(--superficie);
 }
-.sala-dato { padding: 1rem 1.35rem 1.1rem; }
+/* Columna flexible: si una etiqueta ocupa más líneas, los números siguen alineados abajo */
+.sala-dato { display: flex; flex-direction: column; justify-content: space-between; padding: 1rem 1.35rem 1.1rem; }
 .sala-dato + .sala-dato { border-left: 1px solid var(--borde); }
 .sala-dato dt {
     display: flex;

@@ -91,5 +91,10 @@ comprobar('es_cliente del cliente de prueba es true', es_cliente($id_cliente_see
 comprobar('es_cliente del chef es false', !es_cliente($id_chef_seed));
 comprobar('es_cliente de un id inexistente es false', !es_cliente(99999999));
 comprobar('es_cliente de 0 es false', !es_cliente(0));
+// nombre_cliente(): valida y devuelve el nombre en una sola consulta (para el mensaje del camarero)
+comprobar('nombre_cliente del cliente de prueba devuelve su usuario',
+    nombre_cliente($id_cliente_seed) === (buscar_usuario_por_email('cliente@ebano.com')['username'] ?? ''));
+comprobar('nombre_cliente del chef es null', nombre_cliente($id_chef_seed) === null);
+comprobar('nombre_cliente de un id inexistente es null', nombre_cliente(99999999) === null);
 
 exit($fallos > 0 ? 1 : 0);

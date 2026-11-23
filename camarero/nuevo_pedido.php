@@ -5,7 +5,7 @@
  * Paso 2: elegir los platos con la misma carta del cliente (tarjeta_plato.php) y el carrito de carrito.js,
  *         guardado con otra clave (CLAVE_CARRITO_CAMARERO) para no mezclarlo con el del cliente.
  * POST (accion=pedir): verifica CSRF, comprueba en el servidor que cliente_id sea de verdad un Client
- * (es_cliente) y crea los pedidos ya asignados a este camarero. Patrón PRG con mensaje flash.
+ * (nombre_cliente) y crea los pedidos ya asignados a este camarero. Patrón PRG con mensaje flash.
  */
 
 require_once __DIR__ . '/../includes/auth.php';
@@ -26,16 +26,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // El select manda un id, pero puede venir manipulado: debe ser un entero positivo de un usuario Client
     $cliente_id = filter_var($_POST['cliente_id'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
-    if ($cliente_id === false || !es_cliente($cliente_id)) {
+    // nombre_cliente() valida el rol Client y devuelve el nombre en la misma consulta (null si no es cliente)
+    $nombre_cliente = $cliente_id === false ? null : nombre_cliente($cliente_id);
+    if ($nombre_cliente === null) {
         flash('danger', 'Elige de la lista el cliente para el que es el pedido.');
         redirigir('camarero/nuevo_pedido.php');
     }
 
     try {
         crear_pedidos($cliente_id, items_desde_post($_POST['items'] ?? null), $usuario['id']);
-        // Nombre del cliente para el mensaje (mostrar_flash() lo escapa al imprimirlo)
-        $nombres = array_column(obtener_clientes(), 'username', 'id');
-        flash('success', 'Pedido registrado para ' . ($nombres[$cliente_id] ?? 'el cliente'));
+        flash('success', 'Pedido registrado para ' . $nombre_cliente); // mostrar_flash() lo escapa al imprimirlo
         redirigir('camarero/dashboard.php?nuevo=1');
     } catch (InvalidArgumentException $ex) {
         flash('danger', $ex->getMessage()); // el carrito sigue guardado: se corrige y se reenvía

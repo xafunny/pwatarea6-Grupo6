@@ -267,8 +267,9 @@ function consultar_pedidos_sala(string $condicion, string $orden, array $paramet
 
 /**
  * Pedidos asignados a un camarero: primero los que siguen en curso y después los entregados,
- * cada grupo del más nuevo al más viejo. De los entregados solo se muestran los de hoy,
- * para que la lista no crezca sin fin.
+ * cada grupo del más nuevo al más viejo. De los entregados solo se muestran los pedidos creados hoy
+ * que ya fueron entregados, para que la lista no crezca sin fin.
+ * Se filtra por created_at porque la tabla orders no guarda la fecha de entrega.
  */
 function pedidos_de_camarero(int $camarero_id): array
 {

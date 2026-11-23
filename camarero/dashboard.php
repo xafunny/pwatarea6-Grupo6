@@ -1,7 +1,8 @@
 <?php
 /**
  * Panel de sala del camarero.
- * - Cabecera: saludo, resumen (asignados activos, listos para servir, entregados hoy) y el botón "Nuevo pedido".
+ * - Cabecera: saludo, resumen (asignados activos, listos para servir y pedidos de hoy ya entregados)
+ *   y el botón "Nuevo pedido".
  * - "El pase": franja dorada con los platos que la cocina ya terminó. Cada uno tiene su botón "Entregar".
  * - Pestañas: "Mis pedidos" (los asignados a este camarero, con su estado y progreso)
  *   y "Sin asignar" (pedidos que nadie atiende, con el botón "Tomar").
@@ -54,7 +55,9 @@ $listos = pedidos_listos();
 $sin_asignar = pedidos_sin_asignar();
 
 $activos = 0;          // mis pedidos que aún no llegaron a la mesa
-$entregados_hoy = 0;   // pedidos_de_camarero() solo devuelve los entregados de hoy
+// Pedidos creados hoy que ya fueron entregados: orders no guarda la fecha de entrega, así que se cuenta
+// por la fecha de creación (pedidos_de_camarero() solo trae, de los entregados, los creados hoy)
+$entregados_hoy = 0;
 foreach ($mis_pedidos as $pedido) {
     if ($pedido['status'] === 'Served') {
         $entregados_hoy++;
@@ -110,7 +113,7 @@ require __DIR__ . '/../includes/header.php';
             <dd data-contar="<?= e((string) count($listos)) ?>"><?= e((string) count($listos)) ?></dd>
         </div>
         <div class="sala-dato">
-            <dt><i class="bi bi-check2-all" aria-hidden="true"></i> Entregados hoy</dt>
+            <dt><i class="bi bi-check2-all" aria-hidden="true"></i> Entregados · pedidos de hoy</dt>
             <dd data-contar="<?= e((string) $entregados_hoy) ?>"><?= e((string) $entregados_hoy) ?></dd>
         </div>
     </dl>
@@ -199,7 +202,7 @@ require __DIR__ . '/../includes/header.php';
         </ul>
 
         <div class="tab-content">
-            <!-- Mis pedidos: en curso primero, después los entregados de hoy -->
+            <!-- Mis pedidos: en curso primero, después los pedidos creados hoy que ya fueron entregados -->
             <div class="tab-pane fade<?= $pestana === 'mios' ? ' show active' : '' ?>" id="panel-mios" role="tabpanel"
                  aria-labelledby="pestana-mios" tabindex="0">
                 <?php if ($mis_pedidos): ?>

@@ -227,16 +227,56 @@ foreach ($sin_asignar as $i => $fila_libre) {
 }
 comprobar('pedidos_sin_asignar va del más viejo al más nuevo', $asc);
 
-// pedidos_listos(): solo Ready to serve
+// pedidos_listos(): se preparan 2 pedidos 'Ready to serve' conocidos (uno de hace 1 hora y otro de ahora)
+// para que la prueba nunca quede vacía. Son filas nuevas: la limpieza final (id > max_previo) las borra.
+crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]], $camarero['id']);
+$id_listo_viejo = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+$pdo->prepare("UPDATE orders SET status = 'Ready to serve', created_at = NOW() - INTERVAL 1 HOUR WHERE id = ?")
+    ->execute([$id_listo_viejo]);
+crear_pedidos($cliente_id, [['dish_id' => 3, 'quantity' => 1]]);
+$id_listo_nuevo = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+$pdo->prepare("UPDATE orders SET status = 'Ready to serve' WHERE id = ?")->execute([$id_listo_nuevo]);
+
 $listos = pedidos_listos();
+$ids_listos = array_map('intval', array_column($listos, 'id'));
 $solo_listos = true;
-foreach ($listos as $fila_lista) {
+$listos_ascendente = true;
+foreach ($listos as $i => $fila_lista) {
     if ($fila_lista['status'] !== 'Ready to serve') {
         $solo_listos = false;
     }
+    if ($i > 0) {
+        $anterior = $listos[$i - 1];
+        $mismo_momento = $anterior['created_at'] === $fila_lista['created_at'];
+        if ($anterior['created_at'] > $fila_lista['created_at']
+            || ($mismo_momento && (int) $anterior['id'] > (int) $fila_lista['id'])) {
+            $listos_ascendente = false;
+        }
+    }
 }
+comprobar('pedidos_listos incluye los 2 pedidos listos preparados',
+    in_array($id_listo_viejo, $ids_listos, true) && in_array($id_listo_nuevo, $ids_listos, true));
 comprobar('pedidos_listos solo trae Ready to serve', $solo_listos);
-comprobar('pedidos_listos trae el camarero (o null)', !isset($listos[0]) || array_key_exists('camarero', $listos[0]));
+comprobar('pedidos_listos va del más viejo al más nuevo', $listos_ascendente);
+comprobar('pedidos_listos pone el de hace 1 hora antes que el de ahora',
+    array_search($id_listo_viejo, $ids_listos, true) < array_search($id_listo_nuevo, $ids_listos, true));
+$fila_vieja = $listos[array_search($id_listo_viejo, $ids_listos, true)];
+$fila_nueva = $listos[array_search($id_listo_nuevo, $ids_listos, true)];
+comprobar('pedidos_listos trae el camarero del pedido asignado',
+    $fila_vieja['camarero'] !== null && (int) $fila_vieja['camarero_id'] === $camarero['id']);
+comprobar('pedidos_listos trae camarero null en el pedido sin asignar',
+    array_key_exists('camarero', $fila_nueva) && $fila_nueva['camarero'] === null);
+
+// Un entregado de hace 2 días de este camarero: NO debe aparecer en pedidos_de_camarero()
+// (solo se muestran los entregados de pedidos creados hoy)
+crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]], $camarero['id']);
+$id_servido_viejo = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+$pdo->prepare("UPDATE orders SET status = 'Served', created_at = NOW() - INTERVAL 2 DAY WHERE id = ?")
+    ->execute([$id_servido_viejo]);
+// Y uno entregado creado hoy: SÍ debe aparecer
+crear_pedidos($cliente_id, [['dish_id' => 3, 'quantity' => 1]], $camarero['id']);
+$id_servido_hoy = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+$pdo->prepare("UPDATE orders SET status = 'Served' WHERE id = ?")->execute([$id_servido_hoy]);
 
 // tomar_pedido(): solo el primero lo consigue
 comprobar('tomar_pedido la primera vez es true', tomar_pedido($id_libre, $camarero['id']) === true);
@@ -256,6 +296,8 @@ $mios_camarero = pedidos_de_camarero($camarero['id']);
 $ids_camarero = array_map('intval', array_column($mios_camarero, 'id'));
 comprobar('pedidos_de_camarero contiene el pedido tomado', in_array($id_libre, $ids_camarero, true));
 comprobar('pedidos_de_camarero contiene el pedido creado en sala', in_array($id_en_sala, $ids_camarero, true));
+comprobar('pedidos_de_camarero incluye un entregado creado hoy', in_array($id_servido_hoy, $ids_camarero, true));
+comprobar('pedidos_de_camarero excluye un entregado creado hace 2 días', !in_array($id_servido_viejo, $ids_camarero, true));
 $visto_servido = false;
 $activos_primero = true;
 $solo_suyos = true;
