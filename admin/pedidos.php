@@ -130,7 +130,7 @@ require __DIR__ . '/../includes/header.php';
                             <th scope="col">Cliente</th>
                             <th scope="col">Plato</th>
                             <th scope="col" class="text-end">Cant.</th>
-                            <th scope="col" class="text-end">Subtotal</th>
+                            <th scope="col" class="text-end" title="Precio actual del plato × cantidad (el pedido no guarda el precio del momento)">Subtotal (precio actual)</th>
                             <th scope="col">Camarero</th>
                             <th scope="col">Estado</th>
                             <th scope="col">Cambiar a</th>

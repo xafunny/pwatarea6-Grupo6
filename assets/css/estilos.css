@@ -30,6 +30,9 @@
     --oro-claro: #E2C78C;
     --oro-apagado: color-mix(in srgb, var(--oro) 62%, var(--superficie)); /* pasos ya completados */
     --oro-rgb: 201, 164, 92;
+    --fondo-rgb: 14, 14, 17;      /* el fondo en RGB, para velos translúcidos: rgba(var(--fondo-rgb), .5) */
+    --texto-realce: #FFF8EA;      /* blanco cálido para títulos grandes sobre foto */
+    --texto-sobre-foto: color-mix(in srgb, var(--texto) 70%, var(--texto-2)); /* un punto más claro que --texto-2 */
     --tinta-sobre-oro: #17130B;   /* texto encima de un botón dorado (contraste 8:1) */
 
     /* Estados del pedido: tonos apagados para que no griten sobre lo oscuro */
@@ -56,11 +59,11 @@
 
     /* Overrides de las variables de Bootstrap (modo oscuro) */
     --bs-body-bg: var(--fondo);
-    --bs-body-bg-rgb: 14, 14, 17;
+    --bs-body-bg-rgb: var(--fondo-rgb);
     --bs-body-color: var(--texto);
     --bs-body-color-rgb: 236, 230, 216;
     --bs-body-font-family: var(--fuente-texto);
-    --bs-emphasis-color: #FFF8EA;
+    --bs-emphasis-color: var(--texto-realce);
     --bs-heading-color: var(--texto);
     --bs-secondary-color: var(--texto-2);
     --bs-secondary-bg: var(--superficie);
@@ -120,7 +123,7 @@ p { text-wrap: pretty; }
 
 a { text-underline-offset: .2em; text-decoration-thickness: 1px; }
 
-::selection { background: rgba(var(--oro-rgb), .35); color: #FFF8EA; }
+::selection { background: rgba(var(--oro-rgb), .35); color: var(--texto-realce); }
 
 input, textarea { caret-color: var(--oro); }
 
@@ -256,14 +259,14 @@ html { scrollbar-color: var(--borde-fuerte) var(--fondo); }
     font-size: .9375rem;
 }
 .alert-success { --bs-alert-bg: rgba(158, 189, 152, .1); --bs-alert-border-color: rgba(158, 189, 152, .35); --bs-alert-color: #C4DABF; }
-.alert-danger  { --bs-alert-bg: rgba(224, 138, 126, .1); --bs-alert-border-color: rgba(224, 138, 126, .38); --bs-alert-color: #F0B5AC; }
-.alert-warning { --bs-alert-bg: rgba(224, 178, 82, .1);  --bs-alert-border-color: rgba(224, 178, 82, .35);  --bs-alert-color: #EED29A; }
+.alert-danger  { --bs-alert-bg: color-mix(in srgb, var(--peligro) 10%, transparent); --bs-alert-border-color: color-mix(in srgb, var(--peligro) 38%, transparent); --bs-alert-color: #F0B5AC; }
+.alert-warning { --bs-alert-bg: color-mix(in srgb, var(--estado-pendiente) 10%, transparent); --bs-alert-border-color: color-mix(in srgb, var(--estado-pendiente) 35%, transparent); --bs-alert-color: #EED29A; }
 .alert-info    { --bs-alert-bg: rgba(var(--oro-rgb), .08); --bs-alert-border-color: rgba(var(--oro-rgb), .3); --bs-alert-color: var(--oro-claro); }
 .alert .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
 
 /* ---- Navbar: vidrio oscuro con desenfoque, para que el contenido se intuya debajo al hacer scroll ---- */
 .navbar-ebano {
-    background: rgba(14, 14, 17, .72);
+    background: rgba(var(--fondo-rgb),.72);
     -webkit-backdrop-filter: saturate(140%) blur(14px);
     backdrop-filter: saturate(140%) blur(14px);
     border-bottom: 1px solid var(--bs-border-color-translucent);
@@ -511,7 +514,7 @@ a.card-ebano:hover,
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, transparent 55%, rgba(22, 22, 27, .85) 100%);
+    background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--superficie) 85%, transparent) 100%);
     pointer-events: none;
 }
 /* Sin foto: degradado con la marca en el centro */
@@ -656,7 +659,7 @@ a.card-ebano:hover,
     color: var(--texto-2);
     transition: color var(--rapido), background-color var(--rapido);
 }
-.carrito-quitar:hover { color: var(--peligro); background: rgba(224, 138, 126, .1); }
+.carrito-quitar:hover { color: var(--peligro); background: color-mix(in srgb, var(--peligro) 10%, transparent); }
 
 .carrito-vacio {
     display: flex;
@@ -829,8 +832,8 @@ a.card-ebano:hover,
     inset: 0;
     z-index: -1;
     background:
-        linear-gradient(180deg, rgba(14, 14, 17, .55) 0%, rgba(14, 14, 17, .05) 30%, rgba(14, 14, 17, .25) 55%, rgba(14, 14, 17, .92) 100%),
-        linear-gradient(90deg, transparent 70%, rgba(14, 14, 17, .7) 100%);
+        linear-gradient(180deg, rgba(var(--fondo-rgb),.55) 0%, rgba(var(--fondo-rgb),.05) 30%, rgba(var(--fondo-rgb),.25) 55%, rgba(var(--fondo-rgb),.92) 100%),
+        linear-gradient(90deg, transparent 70%, rgba(var(--fondo-rgb),.7) 100%);
 }
 .marca-grande .marca-icono { width: 28px; height: 28px; }
 .marca-grande .marca-nombre { font-size: 2rem; }
@@ -843,8 +846,8 @@ a.card-ebano:hover,
     font-weight: 500;
     line-height: 1.05;
     letter-spacing: -0.015em;
-    color: #FFF8EA;
-    text-shadow: 0 2px 24px rgba(0, 0, 0, .45);
+    color: var(--texto-realce);
+    text-shadow: 0 2px 24px rgba(0, 0, 0, .45); /* sombra negra a propósito: separa el lema de la foto */
 }
 .acceso-lema em { color: var(--oro-claro); font-style: italic; }
 
@@ -900,6 +903,9 @@ a.card-ebano:hover,
 .pagina-inicio { --alto-nav: 3.8rem; } /* alto de la barra: la portada se mete debajo de ella */
 
 .seccion { padding-block: clamp(4.5rem, 9vw, 7.5rem); }
+/* La última sección ya queda pegada al pie: sin esto se juntaban dos rellenos grandes y quedaba un hueco vacío */
+main > .seccion:last-child { padding-bottom: clamp(2rem, 4vw, 3.5rem); }
+.pagina-inicio .pie { margin-top: 0; } /* el relleno de la última sección ya hace de separación */
 
 /* Portada a pantalla completa: la foto queda detrás de la barra de vidrio */
 .hero {
@@ -929,8 +935,8 @@ a.card-ebano:hover,
     inset: 0;
     z-index: -1;
     background:
-        linear-gradient(90deg, rgba(14, 14, 17, .94) 0%, rgba(14, 14, 17, .74) 42%, rgba(14, 14, 17, .28) 100%),
-        linear-gradient(180deg, rgba(14, 14, 17, .55) 0%, transparent 28%, transparent 62%, var(--fondo) 100%);
+        linear-gradient(90deg, rgba(var(--fondo-rgb),.94) 0%, rgba(var(--fondo-rgb),.74) 42%, rgba(var(--fondo-rgb),.28) 100%),
+        linear-gradient(180deg, rgba(var(--fondo-rgb),.55) 0%, transparent 28%, transparent 62%, var(--fondo) 100%);
 }
 .hero-titulo {
     margin: 0 0 1.5rem;
@@ -938,7 +944,7 @@ a.card-ebano:hover,
     font-weight: 500;
     line-height: .98;
     letter-spacing: -0.02em;
-    color: #FFF8EA;
+    color: var(--texto-realce);
 }
 /* Cada línea del título va dentro de una máscara: en la entrada sube desde abajo (app.js) */
 .hero-mascara {
@@ -951,7 +957,7 @@ a.card-ebano:hover,
 .hero-texto {
     max-width: 44ch;
     margin: 0 0 2.25rem;
-    color: #D3CCBD; /* un punto más claro que --texto-2: va sobre foto */
+    color: var(--texto-sobre-foto); /* un punto más claro que --texto-2 porque va sobre foto */
     font-size: clamp(1.02rem, .3vw + .95rem, 1.15rem);
 }
 .hero-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
@@ -1064,8 +1070,8 @@ a.card-ebano:hover,
     animation: latido 2s ease-in-out infinite;
 }
 @keyframes latido {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(224, 178, 82, .55); }
-    50% { box-shadow: 0 0 0 6px rgba(224, 178, 82, 0); }
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--estado-pendiente) 55%, transparent); }
+    50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--estado-pendiente) 0%, transparent); }
 }
 
 /* Chips de filtro: fijos bajo la barra al bajar por la carta; en móvil se deslizan en horizontal */
@@ -1281,7 +1287,7 @@ a.card-ebano:hover,
     font-size: .9rem;
 }
 .cocina-aviso.error { border-color: color-mix(in srgb, var(--peligro) 60%, transparent); color: var(--peligro); }
-.cocina-aviso[hidden] { display: none; }
+.cocina-aviso:empty { display: none; } /* la región aria-live queda en el DOM; sin texto no se ve */
 
 /* Tablero: 3 columnas iguales en escritorio (en móvil se desliza, ver sección 7) */
 .tablero {
@@ -1348,6 +1354,7 @@ a.card-ebano:hover,
 /* Ticket de comanda: papel un poco más claro con el borde inferior dentado.
    La máscara deja el cuerpo entero y recorta abajo una tira de triángulos (los "dientes").
    La sombra va en el <li> con drop-shadow, porque sigue la forma recortada (box-shadow no). */
+/* Las sombras son negro puro a propósito (como --sombra): una sombra no debe teñirse con la paleta */
 .ticket-envoltura { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .4)); }
 .ticket {
     --diente: 7px;
@@ -2001,6 +2008,7 @@ a.card-ebano:hover,
     --bs-btn-disabled-color: var(--texto-2);
     --bs-btn-disabled-border-color: var(--borde);
 }
+/* La tinta oscura de --tinta-sobre-oro también se usa aquí: es el texto oscuro que contrasta con cualquier botón de color claro */
 .btn-peligro {
     --bs-btn-color: var(--tinta-sobre-oro);
     --bs-btn-bg: var(--peligro);
@@ -2133,7 +2141,6 @@ a.card-ebano:hover,
    ========================================================================== */
 .texto-2 { color: var(--texto-2) !important; }
 .texto-oro { color: var(--oro) !important; }
-.fuente-serif { font-family: var(--fuente-titulos) !important; }
 .numeros { font-variant-numeric: tabular-nums; }
 .precio {
     font-family: var(--fuente-titulos);
@@ -2141,9 +2148,7 @@ a.card-ebano:hover,
     color: var(--oro-claro);
     font-variant-numeric: lining-nums;
 }
-.borde-ebano { border: 1px solid var(--borde) !important; }
 .fondo-superficie { background: var(--superficie) !important; }
-.fondo-elevado { background: var(--elevada) !important; }
 
 
 /* ==========================================================================

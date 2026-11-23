@@ -35,13 +35,14 @@ function mostrarAviso(mensaje, tipo) {
     if (!aviso) {
         return;
     }
+    // La región aria-live siempre está en el DOM y solo cambia su texto (si se mostrara/ocultara con [hidden],
+    // algunos lectores de pantalla no anunciarían el mensaje). Sin texto, el CSS la oculta con :empty.
     aviso.textContent = mensaje;
     aviso.classList.toggle('error', tipo === 'error');
-    aviso.hidden = false;
-    // El aviso se esconde solo; si llega otro mensaje, el temporizador vuelve a empezar
+    // El aviso se vacía solo; si llega otro mensaje, el temporizador vuelve a empezar
     clearTimeout(temporizadorAviso);
     temporizadorAviso = setTimeout(function () {
-        aviso.hidden = true;
+        aviso.textContent = '';
     }, 5000);
 }
 
@@ -72,6 +73,7 @@ function crearOculto(texto) {
 /**
  * Arma el <li> de un ticket con los datos que manda la API (ver datos_comanda() en PHP).
  * Mismo HTML que includes/ticket_comanda.php, para que el tablero no "salte" al refrescar.
+ * OJO: hay DOS plantillas del ticket (esta y la de PHP) que deben mantenerse sincronizadas: si cambias una, cambia la otra.
  */
 function crearTicket(pedido) {
     const envoltura = crearElemento('li', 'ticket-envoltura');
@@ -269,7 +271,10 @@ async function cargarPedidos() {
         }
         const datos = await leerJson(respuesta);
         if (datos === null || !respuesta.ok || !Array.isArray(datos.pedidos)) {
-            throw new Error('Respuesta inesperada del servidor');
+            // El servidor respondió, pero con un error (p. ej. un 500 con JSON): no es falta de conexión
+            const fallo = new Error((datos && datos.mensaje) || 'El servidor respondió con un error. Reintentando…');
+            fallo.delServidor = true;
+            throw fallo;
         }
         if (cambiosAlEmpezar !== cambiosLocales) {
             refrescoPendiente = true; // datos de antes del último cambio: no se pintan
@@ -279,7 +284,13 @@ async function cargarPedidos() {
         ultimaActualizacion = Date.now();
         sinConexion = false;
     } catch (error) {
-        sinConexion = true; // el tablero se queda como estaba y se reintenta en el próximo intervalo
+        // El tablero se queda como estaba y se reintenta en el próximo intervalo
+        if (error.delServidor) {
+            sinConexion = false; // hay conexión: se muestra lo que dijo el servidor
+            mostrarAviso(error.message, 'error');
+        } else {
+            sinConexion = true; // fallo de red
+        }
     } finally {
         cargando = false;
         actualizarIndicador();
@@ -378,7 +389,12 @@ function iniciarCocina() {
             cargarPedidos();
         }
     }, INTERVALO_REFRESCO);
-    setInterval(actualizarIndicador, 1000);
+    // El indicador se repinta cada segundo, salvo con la pestaña oculta (nadie lo ve)
+    setInterval(function () {
+        if (!document.hidden) {
+            actualizarIndicador();
+        }
+    }, 1000);
 
     // Al volver a la pestaña, se refresca enseguida en vez de esperar al próximo intervalo
     document.addEventListener('visibilitychange', function () {

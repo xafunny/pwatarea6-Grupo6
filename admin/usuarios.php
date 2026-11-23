@@ -74,6 +74,8 @@ $roles = obtener_roles();
 $previo = $_SESSION['usuario_previo'] ?? null;
 unset($_SESSION['usuario_previo']);
 $form = $previo ?? ['id' => '', 'username' => '', 'email' => '', 'role_id' => (string) id_rol('Client')];
+// ¿El modal está editando al propio administrador? (solo ocurre al reabrirlo tras un error; admin.js lo decide en el resto de casos)
+$editando_yo = (string) $form['id'] === (string) $usuario['id'];
 
 /** Iniciales para el avatar: "Ana López" -> "AL", "camarero" -> "CA". */
 function iniciales(string $nombre): string
@@ -164,7 +166,7 @@ require __DIR__ . '/../includes/header.php';
 
 <!-- Modal crear / editar usuario -->
 <div class="modal fade modal-ebano" id="modal-usuario" tabindex="-1" aria-labelledby="modal-usuario-titulo" aria-hidden="true"
-     <?= $previo !== null ? 'data-reabrir' : '' ?>>
+     data-yo="<?= e((string) $usuario['id']) ?>" <?= $previo !== null ? 'data-reabrir' : '' ?>>
     <div class="modal-dialog modal-dialog-centered">
         <form class="modal-content needs-validation" method="post" action="<?= e(url('admin/usuarios.php')) ?>" novalidate>
             <?= campo_csrf() ?>
@@ -189,12 +191,15 @@ require __DIR__ . '/../includes/header.php';
                 </div>
                 <div class="mb-3">
                     <label class="form-label" for="usuario-rol">Rol</label>
-                    <select class="form-select" id="usuario-rol" name="role_id" required>
+                    <select class="form-select" id="usuario-rol" name="role_id" required<?= $editando_yo ? ' disabled' : '' ?>>
                         <?php foreach ($roles as $rol): ?>
                             <option value="<?= e((string) $rol['id']) ?>"<?= (string) $form['role_id'] === (string) $rol['id'] ? ' selected' : '' ?>><?= e(rol_es($rol['name'])) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <div class="form-text">Tu propio rol no se puede cambiar.</div>
+                    <!-- Un select deshabilitado no se envía: este campo oculto manda el rol actual (admin.js lo activa solo en tu fila).
+                         El servidor igualmente bloquea el cambio de tu propio rol. -->
+                    <input type="hidden" name="role_id" id="usuario-rol-oculto" value="<?= e((string) $form['role_id']) ?>"<?= $editando_yo ? '' : ' disabled' ?>>
+                    <div class="form-text" id="usuario-rol-aviso"<?= $editando_yo ? '' : ' hidden' ?>>Tu propio rol no se puede cambiar.</div>
                 </div>
                 <div>
                     <label class="form-label" for="usuario-clave">Contraseña</label>

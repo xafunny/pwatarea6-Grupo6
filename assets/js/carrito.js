@@ -437,6 +437,13 @@ function iniciarCarrito() {
     }
 
     raiz.addEventListener('submit', prepararEnvio);
+    // Al volver con "atrás" el navegador puede restaurar la página desde su caché (bfcache) con "Confirmar pedido"
+    // deshabilitado y un carrito ya enviado: pageshow con persisted=true recarga para leer el estado real.
+    window.addEventListener('pageshow', function (evento) {
+        if (evento.persisted) {
+            window.location.reload();
+        }
+    });
     prepararPulso();
     renderizarCarrito();
 }

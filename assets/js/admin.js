@@ -55,6 +55,20 @@ function prepararModalPlato() {
     });
 }
 
+/**
+ * Si el admin se edita a sí mismo, el select de rol se deshabilita y el aviso se muestra.
+ * Un select deshabilitado no se envía, así que el campo oculto lleva el rol actual en su lugar.
+ * (Es solo comodidad: el servidor rechaza el cambio de tu propio rol de todos modos.)
+ */
+function bloquearRolPropio(formulario, esPropio) {
+    const select = formulario.querySelector('#usuario-rol');
+    const oculto = formulario.querySelector('#usuario-rol-oculto');
+    select.disabled = esPropio;
+    oculto.disabled = !esPropio;
+    oculto.value = select.value;
+    formulario.querySelector('#usuario-rol-aviso').hidden = !esPropio;
+}
+
 /** Igual que prepararModalPlato(), para usuarios. La contraseña es obligatoria solo al crear. */
 function prepararModalUsuario() {
     const modal = document.getElementById('modal-usuario');
@@ -80,6 +94,8 @@ function prepararModalUsuario() {
         if (datos.rol) {
             formulario.querySelector('#usuario-rol').value = datos.rol;
         }
+        // Solo en la fila del propio administrador: aviso visible y select bloqueado (data-yo = id del admin actual)
+        bloquearRolPropio(formulario, editar && datos.id === modal.dataset.yo);
         clave.value = '';
         clave.required = !editar;
         ayudaClave.textContent = editar ? 'Dejar en blanco para mantener la actual.' : 'Mínimo 6 caracteres.';
@@ -162,6 +178,16 @@ function confirmarEnvios() {
 
     modal.addEventListener('shown.bs.modal', function () {
         botonSi.focus();
+    });
+
+    // Al volver con "atrás" el navegador puede restaurar la página desde su caché (bfcache) con el botón
+    // aún deshabilitado: pageshow con persisted=true lo reactiva y cierra el modal.
+    window.addEventListener('pageshow', function (evento) {
+        if (evento.persisted) {
+            botonSi.disabled = false;
+            pendiente = null;
+            dialogo.hide();
+        }
     });
 }
 

@@ -61,7 +61,7 @@ require __DIR__ . '/../includes/header.php';
     </header>
 
     <!-- Mensajes de error y confirmaciones: los lectores de pantalla los anuncian -->
-    <div class="cocina-aviso" data-aviso role="status" aria-live="polite" hidden></div>
+    <div class="cocina-aviso" data-aviso role="status" aria-live="polite"></div>
 
     <div class="tablero" data-tablero data-api="<?= e(url('chef/api_pedidos.php')) ?>">
         <?php foreach ($columnas as $estado => $columna): ?>
