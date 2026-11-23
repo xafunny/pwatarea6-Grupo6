@@ -5,7 +5,10 @@
  *   - rellenarCuentaDemo(): en login, los botones "Usar" completan el formulario con una cuenta de prueba.
  *   - activarValidacion(): mensajes de Bootstrap en formularios .needs-validation (solo comodidad;
  *     el servidor valida siempre).
- *   - animarEntrada(): aparición escalonada de los elementos .anim-item con GSAP.
+ *   - animarEntrada(): timeline de entrada (portada de la landing + .anim-item escalonados).
+ *   - revelarAlScroll(): los bloques .revelar aparecen al llegar con el scroll (ScrollTrigger).
+ *   - contarNumeros(): los [data-contar] cuentan desde 0 hasta su número.
+ * Toda animación va dentro de gsap.matchMedia() con (prefers-reduced-motion: no-preference).
  */
 'use strict';
 
@@ -76,9 +79,12 @@ function activarValidacion() {
 }
 
 /**
- * Aparición escalonada de los elementos .anim-item (máx. 0.5 s cada uno).
+ * Entrada de la página con un timeline de GSAP (cada paso dura 0.6 s o menos):
+ *   1. Si hay portada (.hero, solo en la landing): la foto se asienta con un leve zoom,
+ *      las líneas del título suben dentro de su máscara y luego aparecen el texto y los botones.
+ *   2. Los elementos .anim-item de cualquier página aparecen escalonados.
  * Solo corre si el usuario NO pidió reducir el movimiento (gsap.matchMedia).
- * Sin JavaScript o sin GSAP los elementos ya son visibles: gsap.from parte de un estado oculto
+ * Sin JavaScript o sin GSAP todo ya es visible: gsap.from parte de un estado oculto
  * solo en el momento de animar.
  */
 function animarEntrada() {
@@ -87,17 +93,90 @@ function animarEntrada() {
     }
     const mm = gsap.matchMedia();
     mm.add('(prefers-reduced-motion: no-preference)', function () {
-        const elementos = gsap.utils.toArray('.anim-item');
-        if (elementos.length === 0) {
-            return;
+        const linea = gsap.timeline({ defaults: { duration: 0.6, ease: 'power3.out' } });
+        const hayPortada = document.querySelector('.hero') !== null;
+
+        if (hayPortada) {
+            linea
+                .from('.hero-foto', { scale: 1.06, opacity: 0.4, ease: 'power2.out' })
+                // yPercent: 100 deja cada línea justo debajo de su máscara (overflow: hidden)
+                .from('.hero-linea', { yPercent: 100, stagger: 0.1 }, 0.1)
+                .from('.hero-texto, .hero-acciones', { opacity: 0, y: 16, duration: 0.5, stagger: 0.08 }, 0.35);
         }
-        gsap.from(elementos, {
-            opacity: 0,
-            y: 14,
-            duration: 0.5,
-            ease: 'power3.out',
-            stagger: 0.06,
-            clearProps: 'opacity,transform' // al terminar, el CSS vuelve a mandar (hover, etc.)
+
+        const elementos = gsap.utils.toArray('.anim-item');
+        if (elementos.length > 0) {
+            // Con portada, los .anim-item entran cuando ella ya va terminando
+            linea.from(elementos, {
+                opacity: 0,
+                y: 14,
+                duration: 0.5,
+                stagger: 0.06,
+                clearProps: 'opacity,transform' // al terminar, el CSS vuelve a mandar (hover, etc.)
+            }, hayPortada ? 0.5 : 0);
+        }
+    });
+}
+
+/**
+ * Aparición de los bloques .revelar al llegar con el scroll (ScrollTrigger).
+ * start: 'top 85%' = cuando el borde superior del bloque pasa el 85 % del alto de la ventana.
+ * once: true = se anima una sola vez; al volver a subir el bloque ya no se oculta.
+ * Si el bloque tiene data-escalonar se animan sus hijos uno tras otro (las tarjetas de la carta).
+ */
+function revelarAlScroll() {
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+        return;
+    }
+    gsap.registerPlugin(ScrollTrigger);
+
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', function () {
+        gsap.utils.toArray('.revelar').forEach(function (bloque) {
+            const escalonar = bloque.hasAttribute('data-escalonar');
+            gsap.from(escalonar ? bloque.children : bloque, {
+                opacity: 0,
+                y: 24,
+                duration: 0.6,
+                ease: 'power3.out',
+                stagger: escalonar ? 0.08 : 0,
+                clearProps: 'opacity,transform',
+                scrollTrigger: { trigger: bloque, start: 'top 85%', once: true }
+            });
+        });
+    });
+}
+
+/**
+ * Contador animado: cada elemento [data-contar="12"] sube de 0 a su número al aparecer en pantalla.
+ * El HTML ya trae el número final, así que sin JavaScript (o con movimiento reducido) se lee igual.
+ */
+function contarNumeros() {
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') {
+        return;
+    }
+    gsap.registerPlugin(ScrollTrigger);
+
+    const mm = gsap.matchMedia();
+    mm.add('(prefers-reduced-motion: no-preference)', function () {
+        document.querySelectorAll('[data-contar]').forEach(function (elemento) {
+            const final = parseInt(elemento.dataset.contar, 10);
+            if (Number.isNaN(final)) {
+                return;
+            }
+            const contador = { valor: 0 }; // GSAP anima esta propiedad y onUpdate la escribe en el HTML
+            gsap.to(contador, {
+                valor: final,
+                duration: 0.6,
+                ease: 'power2.out',
+                scrollTrigger: { trigger: elemento, start: 'top 85%', once: true },
+                onStart: function () {
+                    elemento.textContent = '0';
+                },
+                onUpdate: function () {
+                    elemento.textContent = String(Math.round(contador.valor));
+                }
+            });
         });
     });
 }
@@ -107,4 +186,6 @@ document.addEventListener('DOMContentLoaded', function () {
     rellenarCuentaDemo();
     activarValidacion();
     animarEntrada();
+    revelarAlScroll();
+    contarNumeros();
 });

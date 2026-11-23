@@ -474,6 +474,112 @@ a.card-ebano:hover,
     color: var(--tinta-sobre-oro);
 }
 
+/* ---- Tarjeta de plato (includes/tarjeta_plato.php): landing y menú del cliente ---- */
+.plato {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    overflow: hidden;
+    box-shadow: var(--sombra);
+    transition: border-color var(--medio) var(--curva), box-shadow var(--medio) var(--curva);
+}
+/* Al pasar el mouse el borde se enciende en oro y la sombra toma un brillo cálido */
+.plato:hover {
+    border-color: rgba(var(--oro-rgb), .6);
+    box-shadow: var(--sombra-alta), 0 16px 40px -22px rgba(var(--oro-rgb), .55);
+}
+
+.plato-foto {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--elevada); /* se ve mientras carga la foto */
+}
+.plato-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--curva); /* zoom lento: 1.2 s, más calmado que el resto de la interfaz */
+}
+.plato:hover .plato-foto img { transform: scale(1.06); }
+/* Degradado inferior: funde la foto con el cuerpo de la tarjeta */
+.plato-foto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, rgba(22, 22, 27, .85) 100%);
+    pointer-events: none;
+}
+/* Sin foto: degradado con la marca en el centro */
+.plato-sin-foto {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: rgba(var(--oro-rgb), .55);
+    background:
+        radial-gradient(circle at 50% 45%, rgba(var(--oro-rgb), .16), transparent 60%),
+        linear-gradient(160deg, var(--elevada), var(--fondo));
+}
+.plato-sin-foto .marca-icono { width: 56px; height: 56px; }
+
+.plato-cuerpo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.1rem 1.35rem 1.35rem;
+}
+.plato-categoria {
+    color: var(--oro);
+    font-size: .75rem;
+    font-weight: 700;
+    font-variant: small-caps;
+    letter-spacing: .14em;
+    text-transform: lowercase; /* igual que .antetitulo: versalitas reales */
+}
+.plato-nombre {
+    margin: .3rem 0 .5rem;
+    font-size: 1.55rem;
+    line-height: 1.1;
+}
+/* Descripción recortada a 2 líneas: todas las tarjetas quedan del mismo alto */
+.plato-descripcion {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: calc(2 * 1.55em);
+    margin: 0;
+    color: var(--texto-2);
+    font-size: .9rem;
+    line-height: 1.55;
+}
+.plato-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 1.1rem;
+}
+.plato-precio { font-size: 1.85rem; line-height: 1; }
+.btn-anadir { --bs-btn-padding-x: 1rem; }
+
+/* ---- Enlace con flecha que avanza al pasar el mouse ---- */
+.enlace-flecha {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.enlace-flecha .bi { transition: transform var(--medio) var(--curva); }
+.enlace-flecha:hover .bi { transform: translateX(4px); }
+
 /* ---- Ganchos de animación (GSAP en app.js) ----
    Siempre son visibles en CSS: si JavaScript no carga, el contenido se ve igual. */
 .anim-item,
@@ -609,6 +715,141 @@ a.card-ebano:hover,
 .tabla-demo > :not(caption) > * > * { padding-inline: 1.1rem; }
 .tabla-demo > caption { padding-inline: 1.1rem; padding-bottom: .9rem; }
 
+/* ---- Landing (index.php, body.pagina-inicio) ---- */
+.pagina-inicio { --alto-nav: 3.8rem; } /* alto de la barra: la portada se mete debajo de ella */
+
+.seccion { padding-block: clamp(4.5rem, 9vw, 7.5rem); }
+
+/* Portada a pantalla completa: la foto queda detrás de la barra de vidrio */
+.hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100vh;
+    min-height: 100svh; /* svh: en móvil no queda tapada por la barra del navegador */
+    padding-block: calc(var(--alto-nav) + 3rem) clamp(3.5rem, 10vh, 7rem);
+    overflow: hidden;
+    isolation: isolate;
+}
+.pagina-inicio main > .hero:first-child { margin-top: calc(-1 * var(--alto-nav)); }
+.hero-foto {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 60% 50%;
+}
+/* Velo oscuro: más denso a la izquierda (donde va el texto) y fundido con el fondo abajo */
+.hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(90deg, rgba(14, 14, 17, .94) 0%, rgba(14, 14, 17, .74) 42%, rgba(14, 14, 17, .28) 100%),
+        linear-gradient(180deg, rgba(14, 14, 17, .55) 0%, transparent 28%, transparent 62%, var(--fondo) 100%);
+}
+.hero-titulo {
+    margin: 0 0 1.5rem;
+    font-size: clamp(3rem, 6.2vw + 1rem, 6rem);
+    font-weight: 500;
+    line-height: .98;
+    letter-spacing: -0.02em;
+    color: #FFF8EA;
+}
+/* Cada línea del título va dentro de una máscara: en la entrada sube desde abajo (app.js) */
+.hero-mascara {
+    display: block;
+    overflow: hidden;
+    padding-bottom: .08em; /* que la máscara no corte las colas de la cursiva */
+}
+.hero-linea { display: block; }
+.hero-titulo em { color: var(--oro-claro); font-style: italic; }
+.hero-texto {
+    max-width: 44ch;
+    margin: 0 0 2.25rem;
+    color: #D3CCBD; /* un punto más claro que --texto-2: va sobre foto */
+    font-size: clamp(1.02rem, .3vw + .95rem, 1.15rem);
+}
+.hero-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
+.hero-boton-claro { --bs-btn-border-color: rgba(236, 230, 216, .45); }
+
+/* La carta */
+.carta-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 2.5rem;
+}
+.carta-vacia { color: var(--texto-2); }
+
+/* La casa: foto de la cocina y tres valores en lista */
+.casa { border-block: 1px solid var(--borde); background: linear-gradient(180deg, var(--superficie), var(--fondo)); }
+.casa-foto {
+    margin: 0;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--radio-lg);
+    border: 1px solid var(--borde);
+    box-shadow: var(--sombra-alta);
+}
+.casa-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--curva); }
+.casa-foto:hover img { transform: scale(1.03); }
+.casa-lista { margin: 0; padding: 0; list-style: none; }
+.casa-lista li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.25rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--borde);
+}
+.casa-lista li:last-child { padding-bottom: 0; }
+.casa-icono {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgba(var(--oro-rgb), .4);
+    color: var(--oro);
+    font-size: 1.25rem;
+}
+.casa-lista h3 { margin: .15rem 0 .4rem; font-size: 1.6rem; }
+.casa-lista p { margin: 0; color: var(--texto-2); max-width: 52ch; }
+
+/* Cierre para visitantes: franja con la marca grande de fondo */
+.cierre {
+    position: relative;
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(2rem, 5vw, 4rem);
+    overflow: hidden;
+    border: 1px solid rgba(var(--oro-rgb), .3);
+    border-radius: var(--radio-lg);
+    background:
+        radial-gradient(600px 300px at 0% 0%, rgba(var(--oro-rgb), .14), transparent 70%),
+        var(--elevada);
+    box-shadow: var(--sombra-alta);
+}
+.cierre-marca {
+    position: absolute;
+    right: -3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+/* El icono toma su color de .marca-icono: aquí se apaga casi del todo, como una marca de agua */
+.cierre-marca .marca-icono { width: 22rem; height: 22rem; color: rgba(var(--oro-rgb), .07); }
+.cierre-texto, .cierre-acciones { position: relative; } /* por encima de la marca */
+.cierre h2 { margin: 0 0 .75rem; font-size: clamp(2rem, 2.6vw + 1rem, 3rem); }
+.cierre p { margin: 0; color: var(--texto-2); max-width: 48ch; }
+.cierre-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
+
 /* ---- Página 403 ---- */
 .error-403 {
     display: flex;
@@ -661,6 +902,7 @@ a.card-ebano:hover,
     .acceso-ambiente { display: flex; }
     .acceso-marca-movil { display: none; }
     .acceso-panel { padding-inline: 3rem; }
+    .cierre { grid-template-columns: 1fr auto; }
 }
 
 /* Móvil y tableta: menú desplegado en bloque, usuario abajo */
@@ -679,6 +921,10 @@ a.card-ebano:hover,
     .card-ebano { padding: 1.25rem; }
     .nav-usuario .btn { flex: 1 1 auto; }
     .tabla-demo > :not(caption) > * > * { padding-inline: .75rem; }
+    /* En el teléfono los botones de la portada y del cierre ocupan todo el ancho */
+    .hero-acciones .btn,
+    .cierre-acciones .btn { flex: 1 1 100%; }
+    .cierre-marca { right: -6rem; }
 }
 
 /* Quien pide menos movimiento al sistema operativo no ve transiciones ni zoom */
@@ -694,5 +940,8 @@ a.card-ebano:hover,
     .acceso-ambiente:hover .acceso-foto,
     a.card-ebano:hover,
     .card-ebano.interactiva:hover,
-    .btn-oro:hover { transform: none; }
+    .btn-oro:hover,
+    .plato:hover .plato-foto img,
+    .casa-foto:hover img,
+    .enlace-flecha:hover .bi { transform: none; }
 }
