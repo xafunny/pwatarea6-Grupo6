@@ -27,6 +27,8 @@ $version_css = (string) @filemtime(__DIR__ . '/../assets/css/estilos.css');
     <title><?= e($titulo_pagina) ?> · <?= e(APP_NAME) ?></title>
     <meta name="description" content="Ébano, cocina de autor: carta, pedidos y cocina en un mismo lugar.">
     <meta name="theme-color" content="#0E0E11">
+    <!-- Token CSRF para las llamadas fetch que modifican datos (cocina.js lo manda en X-CSRF-Token) -->
+    <meta name="csrf-token" content="<?= e(csrf_token()) ?>">
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%230E0E11'/%3E%3Cpath d='M12 3.5 19 12l-7 8.5L5 12z' fill='none' stroke='%23C9A45C' stroke-width='1.5'/%3E%3Cpath d='M12 8 15 12l-3 4-3-4z' fill='%23C9A45C'/%3E%3C/svg%3E">
 
     <!-- Fuentes: Cormorant Garamond (títulos y precios) y Manrope (texto e interfaz) -->

@@ -33,7 +33,7 @@ $version_js = (string) @filemtime(__DIR__ . '/../assets/js/app.js');
         integrity="sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d" crossorigin="anonymous"></script>
 <script src="<?= e(url('assets/js/app.js')) ?>?v=<?= e($version_js) ?>"></script>
 <?php foreach ($scripts_pagina as $script): ?>
-<script src="<?= e(url($script)) ?>"></script>
+<script src="<?= e(url($script)) ?>?v=<?= e((string) @filemtime(__DIR__ . '/../' . $script)) ?>"></script>
 <?php endforeach; ?>
 </body>
 </html>

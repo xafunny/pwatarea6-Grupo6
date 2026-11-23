@@ -109,6 +109,27 @@ comprobar('hace_cuanto de 12 min', hace_cuanto(12, '2026-11-23 14:05:00') === 'h
 comprobar('hace_cuanto del mismo día', hace_cuanto(90, '2026-11-23 14:05:00') === 'hoy, 14:05');
 comprobar('hace_cuanto de otro día', hace_cuanto(3000, '2026-11-21 14:05:00') === '21/11, 14:05');
 
+// texto_espera() y es_urgente(): lo que muestra cada comanda del chef
+comprobar('texto_espera de 0 min', texto_espera(0) === 'Recién entrada');
+comprobar('texto_espera de 7 min', texto_espera(7) === '7 min');
+comprobar('texto_espera de 65 min', texto_espera(65) === '1 h 05 min');
+comprobar('es urgente un Pending de 15 min', es_urgente('Pending', 15) === true);
+comprobar('no es urgente un Preparing de 14 min', es_urgente('Preparing', 14) === false);
+comprobar('no es urgente un Ready to serve de 40 min', es_urgente('Ready to serve', 40) === false);
+
+// accion_chef() y datos_comanda()
+comprobar('accion_chef de Pending es Empezar', (accion_chef('Pending')['texto'] ?? '') === 'Empezar');
+comprobar('accion_chef de Preparing lleva a Ready to serve', (accion_chef('Preparing')['estado'] ?? '') === 'Ready to serve');
+comprobar('accion_chef de Ready to serve es null', accion_chef('Ready to serve') === null);
+$comanda = datos_comanda([
+    'id' => 42, 'status' => 'Pending', 'quantity' => '2', 'created_at' => '2026-11-23 14:05:00',
+    'minutos' => '20', 'plato' => 'Risotto', 'cliente' => 'ana', 'camarero' => null,
+]);
+comprobar('datos_comanda arma el número #0042', $comanda['numero'] === '#0042');
+comprobar('datos_comanda da la hora H:i', $comanda['hora'] === '14:05');
+comprobar('datos_comanda marca urgente a los 20 min', $comanda['urgente'] === true);
+comprobar('datos_comanda traduce el estado', $comanda['estado_es'] === 'Pendiente' && $comanda['clase'] === 'pendiente');
+
 // pedidos_de_cliente()
 $mios = pedidos_de_cliente($cliente_id);
 comprobar('pedidos_de_cliente trae el pedido nuevo primero', (int) ($mios[0]['id'] ?? 0) === $id_nuevo + 2);
@@ -129,5 +150,31 @@ cambiar_estado($id_nuevo, 'Ready to serve', $chef);
 comprobar('camarero puede pasar de Ready to serve a Served', cambiar_estado($id_nuevo, 'Served', $camarero) === true);
 $asignado = (int) fila_pedido($id_nuevo)['waiter_id'];
 comprobar('el pedido queda asignado al camarero', $asignado === $camarero['id']);
+
+// pedidos_cocina(): solo los 3 estados de cocina, del más viejo al más nuevo
+crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]]); // garantiza al menos uno Pending
+$cocina = pedidos_cocina();
+$estados_cocina = ['Pending', 'Preparing', 'Ready to serve'];
+$solo_cocina = true;
+$hay_servido = false;
+$ordenado = true;
+foreach ($cocina as $i => $fila_cocina) {
+    if (!in_array($fila_cocina['status'], $estados_cocina, true)) {
+        $solo_cocina = false;
+    }
+    if ($fila_cocina['status'] === 'Served') {
+        $hay_servido = true;
+    }
+    if ($i > 0 && $cocina[$i - 1]['created_at'] > $fila_cocina['created_at']) {
+        $ordenado = false;
+    }
+}
+comprobar('pedidos_cocina devuelve al menos un pedido', count($cocina) > 0);
+comprobar('pedidos_cocina solo trae Pending, Preparing y Ready to serve', $solo_cocina);
+comprobar('pedidos_cocina no incluye pedidos Served', !$hay_servido);
+comprobar('pedidos_cocina ordena por created_at ascendente', $ordenado);
+comprobar('pedidos_cocina trae plato, cliente, camarero y minutos',
+    isset($cocina[0]) && array_key_exists('camarero', $cocina[0])
+    && isset($cocina[0]['plato'], $cocina[0]['cliente'], $cocina[0]['minutos']));
 
 exit($fallos > 0 ? 1 : 0);

@@ -3,8 +3,8 @@
  * Lógica de pedidos (tabla orders).
  * Cada fila de orders es UN plato con su cantidad: un "pedido" del carrito con 3 platos
  * se guarda como 3 filas, todas en estado Pending.
- * Ofrece: crear pedidos (con validación y transacción), listar los pedidos de un cliente
- * y cambiar el estado de un pedido respetando la tabla de transiciones por rol.
+ * Ofrece: crear pedidos (con validación y transacción), listar los pedidos de un cliente,
+ * listar las comandas de la cocina (pedidos_cocina) y cambiar el estado de un pedido respetando la tabla de transiciones por rol.
  * Las Tasks del chef, el camarero y el admin agregan aquí sus propias consultas.
  */
 
@@ -16,6 +16,8 @@ const CANTIDAD_MINIMA = 1;
 const CANTIDAD_MAXIMA = 20;
 /** Tope de platos distintos en un mismo envío: corta formularios manipulados con miles de filas. */
 const MAX_PLATOS_POR_PEDIDO = 30;
+/** Minutos de espera a partir de los cuales una comanda de cocina se marca como urgente. */
+const MINUTOS_URGENTE = 15;
 /** Clave de localStorage del carrito del cliente (la usan menu.php y mis_pedidos.php). */
 const CLAVE_CARRITO_CLIENTE = 'ebano_carrito_cliente';
 
@@ -103,6 +105,95 @@ function pedidos_de_cliente(int $cliente_id): array
     );
     $st->execute([$cliente_id]);
     return $st->fetchAll();
+}
+
+/**
+ * Comandas que la cocina tiene que ver: Pending, Preparing y Ready to serve (las Served ya salieron).
+ * Van del más viejo al más nuevo, porque en cocina se atiende primero lo que lleva más tiempo esperando.
+ * Trae el nombre del plato ('plato'), el usuario del cliente ('cliente') y el del camarero ('camarero',
+ * con LEFT JOIN porque los pedidos hechos por el cliente no tienen camarero y llega null).
+ */
+function pedidos_cocina(): array
+{
+    $st = conectar()->prepare(
+        "SELECT o.id, o.status, o.quantity, o.created_at,
+                TIMESTAMPDIFF(MINUTE, o.created_at, NOW()) AS minutos,
+                d.name AS plato,
+                c.username AS cliente,
+                w.username AS camarero
+         FROM orders o
+         JOIN dishes d ON d.id = o.dish_id
+         JOIN users c ON c.id = o.user_id
+         LEFT JOIN users w ON w.id = o.waiter_id
+         WHERE o.status IN ('Pending', 'Preparing', 'Ready to serve')
+         ORDER BY o.created_at ASC, o.id ASC"
+    );
+    $st->execute();
+    return $st->fetchAll();
+}
+
+/**
+ * Tiempo que lleva esperando una comanda, para el ticket del chef:
+ * 0 -> 'Recién entrada', 7 -> '7 min', 65 -> '1 h 05 min'. cocina.js repite esta misma regla.
+ */
+function texto_espera(int $minutos): string
+{
+    if ($minutos < 1) {
+        return 'Recién entrada';
+    }
+    if ($minutos < 60) {
+        return $minutos . ' min';
+    }
+    return intdiv($minutos, 60) . ' h ' . sprintf('%02d', $minutos % 60) . ' min';
+}
+
+/**
+ * Una comanda es urgente si lleva MINUTOS_URGENTE o más esperando y la cocina aún no la terminó.
+ * Las que están listas para servir ya no dependen del chef, así que no se marcan.
+ */
+function es_urgente(string $estado, int $minutos): bool
+{
+    return in_array($estado, ['Pending', 'Preparing'], true) && $minutos >= MINUTOS_URGENTE;
+}
+
+/**
+ * Botón que ve el chef en cada comanda: a qué estado la lleva y con qué texto.
+ * Las listas para servir devuelven null: desde ahí las mueve el camarero.
+ */
+function accion_chef(string $estado): ?array
+{
+    $acciones = [
+        'Pending'   => ['estado' => 'Preparing', 'texto' => 'Empezar'],
+        'Preparing' => ['estado' => 'Ready to serve', 'texto' => 'Marcar listo'],
+    ];
+    return $acciones[$estado] ?? null;
+}
+
+/**
+ * Convierte una fila de pedidos_cocina() en los datos de un ticket de cocina.
+ * La usan cocina.php (primer pintado en PHP) y api_pedidos.php (JSON para cocina.js),
+ * así los dos dibujan exactamente lo mismo. Son DATOS: el escape se hace al imprimir.
+ */
+function datos_comanda(array $fila): array
+{
+    $minutos = (int) $fila['minutos'];
+    return [
+        'id'        => (int) $fila['id'],
+        'numero'    => '#' . sprintf('%04d', (int) $fila['id']), // número de comanda: #0042
+        'plato'     => $fila['plato'],
+        'cliente'   => $fila['cliente'],
+        'camarero'  => $fila['camarero'], // null si nadie lo tomó todavía
+        'cantidad'  => (int) $fila['quantity'],
+        'estado'    => $fila['status'],
+        'estado_es' => estado_es($fila['status']),
+        'clase'     => clase_estado($fila['status']),
+        'minutos'   => $minutos,
+        'espera'    => texto_espera($minutos),
+        'urgente'   => es_urgente($fila['status'], $minutos),
+        'hora'      => date('H:i', strtotime($fila['created_at'])),
+        'fecha_iso' => str_replace(' ', 'T', $fila['created_at']),
+        'accion'    => accion_chef($fila['status']),
+    ];
 }
 
 /**
