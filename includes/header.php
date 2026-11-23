@@ -7,12 +7,14 @@
  *   $titulo_pagina  string  título de la pestaña (ej: 'Menú')
  *   $clase_body     string  clase del <body> para el layout de cada rol (ej: 'rol-chef')
  *   $sin_navbar     bool    true en login/registro: sin barra ni flash (la página los ubica ella misma)
+ *   $atributos_body array   atributos extra del <body>, ej: ['data-vaciar-carrito' => 'ebano_carrito_cliente']
  * No inicia la sesión: auth.php ya lo hizo antes de llegar aquí.
  */
 
 $titulo_pagina = $titulo_pagina ?? APP_NAME;
 $clase_body = $clase_body ?? '';
 $sin_navbar = $sin_navbar ?? false;
+$atributos_body = $atributos_body ?? [];
 
 // ?v=fecha de modificación: el navegador descarga el CSS de nuevo solo cuando cambia
 $version_css = (string) @filemtime(__DIR__ . '/../assets/css/estilos.css');
@@ -41,7 +43,7 @@ $version_css = (string) @filemtime(__DIR__ . '/../assets/css/estilos.css');
     <!-- Estilos propios: van después de Bootstrap para poder sobrescribirlo -->
     <link rel="stylesheet" href="<?= e(url('assets/css/estilos.css')) ?>?v=<?= e($version_css) ?>">
 </head>
-<body class="<?= e($clase_body) ?>">
+<body class="<?= e($clase_body) ?>"<?php foreach ($atributos_body as $nombre => $valor): ?> <?= e($nombre) ?>="<?= e($valor) ?>"<?php endforeach; ?>>
 <a class="saltar-contenido" href="#contenido">Saltar al contenido</a>
 <?php if (!$sin_navbar): ?>
 <?php require __DIR__ . '/navbar.php'; ?>

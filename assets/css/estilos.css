@@ -28,6 +28,7 @@
     --texto-2: #A39E93;           /* secundario: 7.3:1 sobre el fondo, cumple AA */
     --oro: #C9A45C;
     --oro-claro: #E2C78C;
+    --oro-apagado: color-mix(in srgb, var(--oro) 62%, var(--superficie)); /* pasos ya completados */
     --oro-rgb: 201, 164, 92;
     --tinta-sobre-oro: #17130B;   /* texto encima de un botón dorado (contraste 8:1) */
 
@@ -567,7 +568,187 @@ a.card-ebano:hover,
     padding-top: 1.1rem;
 }
 .plato-precio { font-size: 1.85rem; line-height: 1; }
-.btn-anadir { --bs-btn-padding-x: 1rem; }
+.btn-anadir { --bs-btn-padding-x: 1rem; min-width: 6.5rem; }
+/* Confirmación tras pulsar "Añadir" (carrito.js): el botón pasa a contorno con un check */
+.btn-anadir.anadido {
+    --bs-btn-bg: transparent;
+    --bs-btn-hover-bg: transparent;
+    --bs-btn-color: var(--oro-claro);
+    --bs-btn-hover-color: var(--oro-claro);
+    box-shadow: none;
+}
+
+/* Número dentro de un chip ("Entradas 3") */
+.chip-numero {
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+    opacity: .7;
+}
+
+/* ---- Selector de cantidad: − 2 + ---- */
+.paso {
+    justify-self: start; /* dentro de la fila del carrito (grid) no se estira */
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: var(--fondo);
+}
+.paso-boton {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--texto);
+    transition: color var(--rapido), background-color var(--rapido);
+}
+.paso-boton:hover:not(:disabled) { color: var(--oro-claro); background: rgba(var(--oro-rgb), .1); }
+.paso-boton:disabled { color: var(--borde-fuerte); cursor: not-allowed; }
+.paso-numero {
+    min-width: 1.75rem;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Carrito lateral (offcanvas de Bootstrap) ---- */
+.carrito {
+    --bs-offcanvas-width: 26rem;
+    --bs-offcanvas-bg: var(--superficie);
+    --bs-offcanvas-color: var(--texto);
+    --bs-offcanvas-border-color: var(--borde);
+    --bs-offcanvas-padding-x: 1.5rem;
+    box-shadow: var(--sombra-alta);
+}
+.carrito .offcanvas-header { border-bottom: 1px solid var(--borde); }
+.carrito .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
+.carrito-titulo { margin: 0; font-size: 1.9rem; }
+
+.carrito-lista { margin: 0; padding: 0; list-style: none; }
+/* Cada fila: nombre y quitar arriba; cantidad y subtotal abajo */
+.carrito-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .75rem 1rem;
+    padding-block: 1.1rem;
+    border-bottom: 1px solid var(--borde);
+}
+.carrito-item:first-child { padding-top: 0; }
+.carrito-item-info { display: flex; flex-direction: column; min-width: 0; }
+.carrito-item-nombre { font-family: var(--fuente-titulos); font-size: 1.3rem; font-weight: 600; line-height: 1.15; }
+.carrito-item-unitario { color: var(--texto-2); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.carrito-item-subtotal { font-size: 1.35rem; text-align: right; }
+.carrito-quitar {
+    align-self: start;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--texto-2);
+    transition: color var(--rapido), background-color var(--rapido);
+}
+.carrito-quitar:hover { color: var(--peligro); background: rgba(224, 138, 126, .1); }
+
+.carrito-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--texto-2);
+}
+.carrito-vacio .bi { font-size: 2.25rem; color: rgba(var(--oro-rgb), .6); margin-bottom: 1rem; }
+.carrito-vacio-titulo { margin-bottom: .35rem; font-family: var(--fuente-titulos); font-size: 1.5rem; color: var(--texto); }
+.carrito-vacio p { margin-bottom: .25rem; max-width: 30ch; }
+
+.carrito-pie {
+    padding: 1.25rem 1.5rem 1.5rem;
+    border-top: 1px solid var(--borde);
+    background: var(--elevada);
+}
+.carrito-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-weight: 600;
+}
+.carrito-total .precio { font-size: 2.1rem; line-height: 1; }
+.carrito-nota { margin: .5rem 0 1rem; color: var(--texto-2); font-size: .8125rem; }
+
+/* ---- Línea de progreso de un pedido (4 pasos) ---- */
+.progreso {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: auto 0 0; /* auto arriba: en tarjetas de igual alto, las líneas quedan alineadas abajo */
+    padding: 0;
+    list-style: none;
+}
+.progreso-paso {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+}
+/* Tramo de línea que une cada punto con el anterior */
+.progreso-paso + .progreso-paso::before {
+    content: "";
+    position: absolute;
+    top: .6rem;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--borde-fuerte);
+    z-index: 0;
+}
+.progreso-paso.hecho + .progreso-paso::before { background: var(--oro-apagado); }
+.progreso-punto {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid var(--borde-fuerte);
+    background: var(--superficie);
+    color: var(--tinta-sobre-oro);
+    font-size: .85rem;
+}
+.progreso-paso.hecho .progreso-punto { background: var(--oro-apagado); border-color: var(--oro-apagado); }
+.progreso-paso.actual .progreso-punto {
+    background: var(--oro);
+    border-color: var(--oro);
+    box-shadow: 0 0 0 4px rgba(var(--oro-rgb), .18), 0 4px 12px -4px rgba(var(--oro-rgb), .6);
+}
+.progreso-texto { color: var(--texto-2); font-size: .75rem; font-weight: 600; line-height: 1.3; }
+.progreso-paso.actual .progreso-texto { color: var(--oro-claro); }
+.progreso-paso.hecho .progreso-texto { color: var(--texto); }
+
+/* ---- Estado vacío: marca de agua, título serif y una acción ---- */
+.estado-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(3rem, 8vw, 5rem) 1.5rem;
+    text-align: center;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio-lg);
+    background: radial-gradient(500px 240px at 50% 0%, rgba(var(--oro-rgb), .07), transparent 70%);
+}
+.estado-vacio-marca .marca-icono { width: 3.5rem; height: 3.5rem; color: rgba(var(--oro-rgb), .6); margin-bottom: 1.25rem; }
+.estado-vacio h2 { font-size: clamp(1.9rem, 2vw + 1rem, 2.5rem); margin-bottom: .75rem; }
+.estado-vacio p { color: var(--texto-2); max-width: 44ch; margin-bottom: 1.75rem; }
 
 /* ---- Enlace con flecha que avanza al pasar el mouse ---- */
 .enlace-flecha {
@@ -850,6 +1031,171 @@ a.card-ebano:hover,
 .cierre p { margin: 0; color: var(--texto-2); max-width: 48ch; }
 .cierre-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
 
+/* ---- Cliente: cabecera compartida por la carta y Mis pedidos ---- */
+.menu-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    margin-bottom: 2rem;
+}
+/* Aviso "2 platos en camino": enlace a Mis pedidos con un punto que late */
+.menu-en-curso {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem 1.1rem;
+    border: 1px solid rgba(var(--oro-rgb), .4);
+    border-radius: 999px;
+    background: rgba(var(--oro-rgb), .07);
+    color: var(--oro-claro);
+    font-size: .9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color var(--rapido), border-color var(--rapido);
+}
+.menu-en-curso:hover { background: rgba(var(--oro-rgb), .14); border-color: var(--oro); color: var(--oro-claro); }
+.menu-en-curso-punto {
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background: var(--estado-pendiente);
+    animation: latido 2s ease-in-out infinite;
+}
+@keyframes latido {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(224, 178, 82, .55); }
+    50% { box-shadow: 0 0 0 6px rgba(224, 178, 82, 0); }
+}
+
+/* Chips de filtro: fijos bajo la barra al bajar por la carta; en móvil se deslizan en horizontal */
+.filtros {
+    position: sticky;
+    top: var(--alto-barra, 4.1rem);
+    z-index: 10;
+    display: flex;
+    gap: .5rem;
+    margin-inline: -.75rem; /* igual al margen interno del .container: llega al borde sin desbordar */
+    padding: .85rem .75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--fondo);
+    /* La sombra sólida extiende el fondo a todo el ancho de la ventana; clip-path la recorta arriba y abajo */
+    box-shadow: 0 0 0 100vmax var(--fondo), 0 1px 0 100vmax var(--borde);
+    clip-path: inset(0 -100vmax -1px); /* -1px abajo: deja ver la línea divisoria */
+}
+.filtros::-webkit-scrollbar { display: none; }
+.filtros .chip { flex-shrink: 0; }
+
+.carta-seccion { padding-top: 2rem; scroll-margin-top: 8rem; }
+/* Título de sección con una línea fina dorada que llena el resto del ancho */
+.carta-seccion-titulo {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: clamp(1.9rem, 1.6vw + 1.2rem, 2.4rem);
+}
+.carta-seccion-titulo::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(var(--oro-rgb), .45), transparent);
+}
+
+/* Botón flotante del carrito, abajo a la derecha */
+.carrito-flotante {
+    position: fixed;
+    right: clamp(1rem, 3vw, 2rem);
+    bottom: clamp(1rem, 3vw, 2rem);
+    z-index: 1030;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    --bs-btn-padding-y: .8rem;
+    --bs-btn-padding-x: 1.35rem;
+    box-shadow: var(--sombra-alta), 0 10px 30px -10px rgba(var(--oro-rgb), .6);
+}
+.carrito-flotante .bi { font-size: 1.15rem; }
+.carrito-contador {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding-inline: .4rem;
+    border-radius: 999px;
+    background: var(--tinta-sobre-oro);
+    color: var(--oro-claro);
+    font-size: .8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.carrito-contador[hidden] { display: none; }
+.pagina-menu .pie { padding-bottom: 6rem; } /* que el botón flotante no tape el pie */
+
+/* ---- Mis pedidos ---- */
+.bloque-pedidos { margin-bottom: 3.5rem; }
+.bloque-pedidos-titulo {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+    font-size: clamp(1.8rem, 1.4vw + 1.2rem, 2.3rem);
+}
+.bloque-pedidos-numero {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding-inline: .5rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    color: var(--texto-2);
+    font-family: var(--fuente-texto);
+    font-size: .85rem;
+    font-weight: 700;
+}
+.bloque-pedidos-vacio {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem 1.25rem;
+    padding: 1.5rem;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio);
+    color: var(--texto-2);
+}
+
+.pedido-activo { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+.pedido-activo-cabecera {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 1rem;
+}
+.pedido-miniatura {
+    width: 4rem;
+    height: 4rem;
+    border-radius: var(--radio-sm);
+    border: 1px solid var(--borde);
+    object-fit: cover;
+}
+.pedido-miniatura-vacia { display: grid; place-items: center; background: var(--elevada); }
+.pedido-activo-datos { min-width: 0; }
+.pedido-activo-nombre { margin: 0 0 .3rem; font-size: 1.35rem; line-height: 1.15; }
+.pedido-activo-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 .6rem; color: var(--texto-2); font-size: .85rem; white-space: nowrap; }
+
+.tabla-historial > tfoot th,
+.tabla-historial > tfoot td {
+    padding-block: 1rem;
+    border-top: 1px solid var(--borde-fuerte);
+    border-bottom: 0;
+    font-weight: 700;
+}
+.tabla-historial > :not(caption) > * > *:first-child { padding-left: 1.5rem; }
+.tabla-historial > :not(caption) > * > *:last-child { padding-right: 1.5rem; }
+.tabla-total { font-size: 1.5rem; }
+
 /* ---- Página 403 ---- */
 .error-403 {
     display: flex;
@@ -925,6 +1271,10 @@ a.card-ebano:hover,
     .hero-acciones .btn,
     .cierre-acciones .btn { flex: 1 1 100%; }
     .cierre-marca { right: -6rem; }
+    /* Botón flotante del carrito: solo icono y contador, para no tapar las tarjetas */
+    .carrito-flotante-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .carrito-flotante { --bs-btn-padding-x: 1.1rem; }
+    .progreso-texto { font-size: .6875rem; }
 }
 
 /* Quien pide menos movimiento al sistema operativo no ve transiciones ni zoom */
@@ -944,4 +1294,5 @@ a.card-ebano:hover,
     .plato:hover .plato-foto img,
     .casa-foto:hover img,
     .enlace-flecha:hover .bi { transform: none; }
+    .menu-en-curso-punto { animation: none; }
 }
