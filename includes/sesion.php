@@ -17,6 +17,8 @@ function es_https(): bool
     if (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
         return true;
     }
+    // Hostings con proxy (InfinityFree) terminan el HTTPS antes de PHP y lo avisan con esta cabecera;
+    // si alguien la falsifica, lo único que logra es que la cookie se marque como Secure.
     if (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https') {
         return true;
     }
@@ -40,6 +42,9 @@ function iniciar_sesion_segura(): void
     // Modo estricto: PHP rechaza ids de sesión que él no generó (evita la fijación de sesión)
     ini_set('session.use_strict_mode', '1');
     ini_set('session.use_only_cookies', '1');
+    // El recolector de basura de PHP borra los archivos de sesión tras gc_maxlifetime (por defecto 24 min):
+    // sin esto la inactividad de SESION_INACTIVIDAD_MIN nunca se alcanzaría porque la sesión ya no existiría.
+    ini_set('session.gc_maxlifetime', (string) (SESION_INACTIVIDAD_MIN * 60));
 
     session_name('EBANOSESSID');
     session_set_cookie_params([

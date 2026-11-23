@@ -83,7 +83,7 @@ function requerir_rol(array $roles): array
     $usuario = requerir_login();
     if (!in_array($usuario['role'], $roles, true)) {
         http_response_code(403);
-        // 403.php usa $usuario; se incluye aquí mismo para no cambiar de URL
+        // 403.php llama a usuario_actual(); se incluye aquí mismo para no cambiar de URL
         include __DIR__ . '/../403.php';
         exit;
     }

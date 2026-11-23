@@ -70,15 +70,15 @@ ALTER TABLE orders
 -- Todos los usuarios usan la contraseña 123456 (mismo hash bcrypt generado con password_hash).
 -- ------------------------------------------------------------
 INSERT INTO users (id, username, email, password, role_id) VALUES
-(1, 'Administrador Ébano', 'admin@ebano.com',    '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 1),
-(2, 'Chef Mateo Rivas',    'chef@ebano.com',     '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 2),
-(3, 'Camila Ortega',       'camarero@ebano.com', '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 3),
-(4, 'Cliente Demo',        'cliente@ebano.com',  '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 4),
-(5, 'Lucía Fernández',     'lucia@ejemplo.com',  '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 4),
-(6, 'Andrés Salazar',      'andres@ejemplo.com', '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 4),
-(7, 'Valeria Núñez',       'valeria@ejemplo.com','$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 4),
-(8, 'Diego Paredes',       'diego@ejemplo.com',  '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 4),
-(9, 'Sofía Barrera',       'sofia@ejemplo.com',  '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32', 4);
+(1, 'Administrador Ébano', 'admin@ebano.com',    '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 1),
+(2, 'Chef Mateo Rivas',    'chef@ebano.com',     '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 2),
+(3, 'Camila Ortega',       'camarero@ebano.com', '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 3),
+(4, 'Cliente Demo',        'cliente@ebano.com',  '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 4),
+(5, 'Lucía Fernández',     'lucia@ejemplo.com',  '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 4),
+(6, 'Andrés Salazar',      'andres@ejemplo.com', '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 4),
+(7, 'Valeria Núñez',       'valeria@ejemplo.com','$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 4),
+(8, 'Diego Paredes',       'diego@ejemplo.com',  '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 4),
+(9, 'Sofía Barrera',       'sofia@ejemplo.com',  '$2y$12$gNTEJITwJfhbooQFdE9b5eVdA242qjC3Gndj9SvsrQ1UYgZihV3ZG', 4);
 
 -- 12 platos en 4 categorías. Fotos de Unsplash por URL.
 INSERT INTO dishes (id, name, description, price, category, image) VALUES

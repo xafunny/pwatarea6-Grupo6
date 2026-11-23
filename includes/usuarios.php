@@ -36,8 +36,11 @@ function autenticar(string $email, string $clave): ?array
 {
     $u = buscar_usuario_por_email($email);
     if ($u === null) {
-        // Se verifica contra un hash cualquiera para que la respuesta tarde lo mismo exista o no el correo
-        password_verify($clave, '$2y$12$O9CgK0FO2IXJ.1hKNR2sDuPLPxHro5.IuQBkQQXCplpC3bQGs/u32');
+        // Se verifica contra un hash señuelo para que la respuesta tarde lo mismo exista o no el correo.
+        // Se genera una sola vez (static) con PASSWORD_DEFAULT, así su costo siempre coincide con el de los hashes reales.
+        static $hash_senuelo = null;
+        $hash_senuelo ??= password_hash('señuelo', PASSWORD_DEFAULT);
+        password_verify($clave, $hash_senuelo);
         return null;
     }
     if (!password_verify($clave, $u['password'])) {
@@ -81,7 +84,8 @@ function errores_usuario(string $nombre, string $email, string $clave, bool $cla
     }
 
     if ($clave !== '' || $clave_obligatoria) {
-        if (strlen($clave) < 6) {
+        // El mínimo cuenta caracteres (mb_strlen); el máximo cuenta bytes (strlen) porque es el límite real de bcrypt
+        if (mb_strlen($clave, 'UTF-8') < 6) {
             $errores['clave'] = 'La contraseña debe tener al menos 6 caracteres.';
         } elseif (strlen($clave) > 72) {
             // bcrypt solo usa los primeros 72 bytes; más largo daría una falsa sensación de seguridad

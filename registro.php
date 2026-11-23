@@ -19,15 +19,21 @@ $email = '';
 $errores = [];   // [campo => mensaje] para marcar cada campo con su error
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verificar_csrf();
     $nombre = trim((string) ($_POST['nombre'] ?? ''));
     $email = trim((string) ($_POST['email'] ?? ''));
     $clave = (string) ($_POST['clave'] ?? '');
     $clave2 = (string) ($_POST['clave2'] ?? '');
 
-    $errores = errores_usuario($nombre, $email, $clave, true);
-    if (!isset($errores['clave']) && $clave !== $clave2) {
-        $errores['clave2'] = 'Las contraseñas no coinciden.';
+    // Aquí no se usa verificar_csrf(): si la sesión caducó entre abrir el formulario y enviarlo,
+    // se vuelve a mostrar el formulario (ya con token nuevo) con un aviso en lugar de un 403 en texto plano.
+    $token = $_POST['csrf'] ?? '';
+    if (!is_string($token) || !hash_equals(csrf_token(), $token)) {
+        $errores['general'] = 'La sesión expiró, vuelve a intentarlo.';
+    } else {
+        $errores = errores_usuario($nombre, $email, $clave, true);
+        if (!isset($errores['clave']) && $clave !== $clave2) {
+            $errores['clave2'] = 'Las contraseñas no coinciden.';
+        }
     }
 
     if (!$errores) {
@@ -37,11 +43,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Bienvenido a Ébano, ' . $nombre . '. Ya puedes elegir tus platos.');
             redirigir('cliente/menu.php');
         } catch (InvalidArgumentException $ex) {
-            // Puede pasar si otra persona registró el mismo correo en el mismo instante
+            // Datos inválidos que se colaron pese a la validación previa
             $errores['email'] = $ex->getMessage();
         } catch (PDOException $ex) {
-            error_log('Error al registrar cliente: ' . $ex->getMessage());
-            $errores['general'] = 'No pudimos crear tu cuenta en este momento. Inténtalo de nuevo.';
+            if ($ex->getCode() === '23000') {
+                // Otra persona registró el mismo correo en el mismo instante: lo frena el UNIQUE de la BD en el INSERT
+                $errores['email'] = 'Ese correo ya está registrado.';
+            } else {
+                error_log('Error al registrar cliente: ' . $ex->getMessage());
+                $errores['general'] = 'No pudimos crear tu cuenta en este momento. Inténtalo de nuevo.';
+            }
         }
     }
 }

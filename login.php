@@ -18,18 +18,24 @@ $email = '';   // se conserva en el formulario si el login falla
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verificar_csrf();
     $email = trim((string) ($_POST['email'] ?? ''));
     $clave = (string) ($_POST['clave'] ?? '');
 
-    $u = autenticar($email, $clave);
-    if ($u !== null) {
-        iniciar_sesion_usuario($u);
-        flash('success', 'Hola de nuevo, ' . $u['username'] . '.');
-        redirigir(dashboard_de($u['role']));
+    // Aquí no se usa verificar_csrf(): si la sesión caducó entre abrir el formulario y enviarlo,
+    // un 403 en texto plano confunde. Se vuelve a mostrar el formulario (ya con token nuevo) y un aviso.
+    $token = $_POST['csrf'] ?? '';
+    if (!is_string($token) || !hash_equals(csrf_token(), $token)) {
+        $error = 'La sesión expiró, vuelve a intentarlo.';
+    } else {
+        $u = autenticar($email, $clave);
+        if ($u !== null) {
+            iniciar_sesion_usuario($u);
+            flash('success', 'Hola de nuevo, ' . $u['username'] . '.');
+            redirigir(dashboard_de($u['role']));
+        }
+        // Mensaje genérico: no revela si el correo existe o si falló la contraseña
+        $error = 'Correo o contraseña incorrectos';
     }
-    // Mensaje genérico: no revela si el correo existe o si falló la contraseña
-    $error = 'Correo o contraseña incorrectos';
 }
 
 // Cuentas de prueba que se muestran en la tabla plegable (todas usan la contraseña 123456)

@@ -62,6 +62,8 @@ function crear_pedidos(int $cliente_id, array $items, ?int $camarero_id = null):
     }
 
     $pdo = conectar();
+    // La disponibilidad se comprueba fuera de la transacción a propósito: si el chef oculta un plato justo
+    // entre la validación y el INSERT, la ventana es de milisegundos y el costo (un plato recién agotado) es mínimo.
     $buscar_plato = $pdo->prepare('SELECT name, available FROM dishes WHERE id = ?');
 
     // 1) Validación: sin platos repetidos, cantidades en rango y platos que existen y están disponibles
@@ -275,10 +277,11 @@ function consultar_pedidos_sala(string $condicion, string $orden, array $paramet
 function pedidos_de_camarero(int $camarero_id): array
 {
     return consultar_pedidos_sala(
-        "o.waiter_id = ? AND (o.status <> 'Served' OR DATE(o.created_at) = CURDATE())",
+        // "Hoy" lo calcula PHP (zona America/Guayaquil) y viaja como parámetro: una sola fuente de la fecha
+        "o.waiter_id = ? AND (o.status <> 'Served' OR DATE(o.created_at) = ?)",
         // (o.status = 'Served') vale 0 o 1: los activos (0) quedan arriba
         "(o.status = 'Served') ASC, o.created_at DESC, o.id DESC",
-        [$camarero_id]
+        [$camarero_id, date('Y-m-d')]
     );
 }
 
@@ -359,7 +362,10 @@ function estadisticas_admin(): array
 {
     $pdo = conectar();
 
-    $pedidos_hoy = (int) $pdo->query('SELECT COUNT(*) FROM orders WHERE DATE(created_at) = CURDATE()')->fetchColumn();
+    // "Hoy" viaja como parámetro desde PHP, igual que en pedidos_de_camarero()
+    $st_hoy = $pdo->prepare('SELECT COUNT(*) FROM orders WHERE DATE(created_at) = ?');
+    $st_hoy->execute([date('Y-m-d')]);
+    $pedidos_hoy = (int) $st_hoy->fetchColumn();
     $ingresos = (float) $pdo->query(
         "SELECT COALESCE(SUM(d.price * o.quantity), 0)
          FROM orders o JOIN dishes d ON d.id = o.dish_id
@@ -415,10 +421,12 @@ function todos_los_pedidos(?string $estado = null, ?string $buscar = null): arra
 
     $buscar = trim((string) $buscar);
     if ($buscar !== '') {
-        // En LIKE, "%" y "_" son comodines: se escapan con "\" para que el texto del usuario se busque
-        // literal (si no, buscar "%" traería todos los pedidos). Los "%" de los extremos los pone PHP.
-        $patron = '%' . addcslashes($buscar, '\\%_') . '%';
-        $condiciones[] = '(c.username LIKE ? OR c.email LIKE ? OR d.name LIKE ?)';
+        // En LIKE, "%" y "_" son comodines: se escapan para que el texto del usuario se busque literal
+        // (si no, buscar "%" traería todos los pedidos). Los "%" de los extremos los pone PHP.
+        // Se usa "!" como carácter de escape declarado con ESCAPE: "\" depende del sql_mode del servidor
+        // (con NO_BACKSLASH_ESCAPES cambia su significado), "!" funciona igual en cualquier configuración.
+        $patron = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $buscar) . '%';
+        $condiciones[] = "(c.username LIKE ? ESCAPE '!' OR c.email LIKE ? ESCAPE '!' OR d.name LIKE ? ESCAPE '!')";
         array_push($parametros, $patron, $patron, $patron);
     }
 

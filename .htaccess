@@ -5,3 +5,7 @@ Options -Indexes
 <FilesMatch "(^\.|\.(sql|md)$)">
     Require all denied
 </FilesMatch>
+
+# FilesMatch solo mira el nombre final del archivo: no cubre /.git/config ni /.superpowers/x.
+# Esta regla responde 404 a cualquier ruta que pase por esas carpetas ocultas.
+RedirectMatch 404 /\.(git|superpowers)(/|$)
