@@ -145,6 +145,8 @@ function obtener_clientes(): array
 
 /**
  * Indica si el id corresponde a un usuario con rol Client.
+ * Las páginas usan nombre_cliente() (valida y trae el nombre en una consulta); esta versión de solo
+ * true/false se conserva porque las pruebas de tests/test_auth.php la ejercitan.
  * El camarero elige al cliente en un <select>, pero el valor llega del navegador y puede venir
  * manipulado: el servidor lo comprueba aquí antes de crear pedidos a su nombre.
  */

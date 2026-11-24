@@ -18,8 +18,9 @@ $email = '';   // se conserva en el formulario si el login falla
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim((string) ($_POST['email'] ?? ''));
-    $clave = (string) ($_POST['clave'] ?? '');
+    // is_string: si llega un arreglo (clave[]=x) se trata como vacío en vez de fallar al convertirlo a texto
+    $email = is_string($_POST['email'] ?? null) ? trim($_POST['email']) : '';
+    $clave = is_string($_POST['clave'] ?? null) ? $_POST['clave'] : '';
 
     // Aquí no se usa verificar_csrf(): si la sesión caducó entre abrir el formulario y enviarlo,
     // un 403 en texto plano confunde. Se vuelve a mostrar el formulario (ya con token nuevo) y un aviso.

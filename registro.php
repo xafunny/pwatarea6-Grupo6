@@ -19,10 +19,11 @@ $email = '';
 $errores = [];   // [campo => mensaje] para marcar cada campo con su error
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombre = trim((string) ($_POST['nombre'] ?? ''));
-    $email = trim((string) ($_POST['email'] ?? ''));
-    $clave = (string) ($_POST['clave'] ?? '');
-    $clave2 = (string) ($_POST['clave2'] ?? '');
+    // is_string: si llega un arreglo (nombre[]=x) se trata como vacío en vez de fallar al convertirlo a texto
+    $nombre = is_string($_POST['nombre'] ?? null) ? trim($_POST['nombre']) : '';
+    $email = is_string($_POST['email'] ?? null) ? trim($_POST['email']) : '';
+    $clave = is_string($_POST['clave'] ?? null) ? $_POST['clave'] : '';
+    $clave2 = is_string($_POST['clave2'] ?? null) ? $_POST['clave2'] : '';
 
     // Aquí no se usa verificar_csrf(): si la sesión caducó entre abrir el formulario y enviarlo,
     // se vuelve a mostrar el formulario (ya con token nuevo) con un aviso en lugar de un 403 en texto plano.

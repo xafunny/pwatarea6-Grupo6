@@ -1,4 +1,4 @@
-﻿# Informe de pruebas E2E
+# Informe de pruebas E2E
 
 Fecha: 2026-11-23 · Entorno: http://localhost/pwatarea6/ (XAMPP, PHP 8.5 local, MariaDB 10.11) · Herramienta: playwright-cli 0.1.25 con Microsoft Edge (`--browser=msedge`).
 
@@ -7,7 +7,7 @@ Fecha: 2026-11-23 · Entorno: http://localhost/pwatarea6/ (XAMPP, PHP 8.5 local,
 ## Cómo ejecutarlo
 
 1. Apache y MySQL encendidos, con `database.sql` importado (solo datos de ejemplo).
-2. Obtener el último id de pedido: `mysql -u root restaurante -e "select max(id) from orders"` y poner ese valor en `BASE_ID` dentro de `tests/e2e/e2e.js` (con los datos de ejemplo es 15).
+2. Obtener el último id de pedido: `mysql -u root restaurante -e "select max(id) from orders"` y poner ese valor en `BASE_ID` dentro de `tests/e2e/e2e.js` (con los datos de ejemplo es 15; sirve para distinguir los pedidos que crea el recorrido de los del seed).
 3. Desde la raíz del repo:
 
 ```
@@ -16,7 +16,7 @@ playwright-cli --raw run-code --filename=tests/e2e/e2e.js > resultado.txt
 playwright-cli close-all
 ```
 
-El script abre un contexto de navegador por rol (cliente, chef, camarero, admin), recorre el flujo, guarda las capturas en `tests/capturas/` y devuelve al final un JSON con cada paso (`paso`, `ok`, `ev`).
+El script abre un contexto de navegador por rol (cliente, chef, camarero, admin), recorre el flujo, guarda las capturas en `tests/capturas/` (ruta relativa al propio script, no hay que editarla) y devuelve al final un JSON con cada paso (`paso`, `ok`, `ev`).
 Después de correrlo hay que volver a importar la BD: `cmd /c "C:\xampp\mysql\bin\mysql.exe -u root restaurante < database.sql"`.
 
 ## Pasos y resultados
@@ -43,7 +43,7 @@ Después de correrlo hay que volver a importar la BD: `cmd /c "C:\xampp\mysql\bi
 | 18 | 403. Cliente abre admin/platos.php | PASS | HTTP 403 |
 | 19 | 403. Cliente abre admin/usuarios.php | PASS | HTTP 403 |
 | 20 | 403. Cliente abre admin/pedidos.php | PASS | HTTP 403 |
-| 21 | 403. Chef abre cliente/menu.php | PASS | HTTP 403 |
+| 21 | 403. Chef abre cliente/menu.php | OBSOLETO | HTTP 403 en esta ejecución; desde la ronda final de correcciones el chef puede ver la carta (solo lectura) y e2e.js ya no lo espera |
 | 22 | 403. Chef abre cliente/mis_pedidos.php | PASS | HTTP 403 |
 | 23 | 403. Chef abre camarero/dashboard.php | PASS | HTTP 403 |
 | 24 | 403. Chef abre camarero/nuevo_pedido.php | PASS | HTTP 403 |
@@ -62,7 +62,7 @@ Después de correrlo hay que volver a importar la BD: `cmd /c "C:\xampp\mysql\bi
 | 37 | 403. Admin abre cliente/mis_pedidos.php | PASS | HTTP 403 |
 | 38 | 403. Admin abre chef/cocina.php (esperado: el admin tiene sus propias páginas) | PASS | HTTP 403 |
 | 39 | 403. Admin abre camarero/dashboard.php | PASS | HTTP 403 |
-| 40 | 403. Admin abre camarero/nuevo_pedido.php | PASS | HTTP 403 |
+| 40 | 403. Admin abre camarero/nuevo_pedido.php | OBSOLETO | HTTP 403 en esta ejecución; desde la ronda final de correcciones el administrador puede crear pedidos y e2e.js ya no lo espera |
 | 41 | 403b. Visitante sin sesión es llevado a login.php | PASS | http://localhost/pwatarea6/login.php |
 | 42 | 10. Admin crea el plato <b>x</b> | PASS | plato creado |
 | 43 | 11. En la tabla del admin se ve literal (sin etiqueta <b>) | PASS | texto literal "<b>x</b>"; elementos <b> en la tabla: 0 |

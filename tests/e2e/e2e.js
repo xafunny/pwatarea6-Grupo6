@@ -1,9 +1,12 @@
 // Recorrido E2E de Ébano con playwright-cli. Ver tests/e2e.md para cómo ejecutarlo.
-// Antes de correrlo: BASE_ID = SELECT MAX(id) FROM orders (los pedidos nuevos tendrán id mayor).
+// Antes de correrlo: BASE_ID = SELECT MAX(id) FROM orders (los pedidos nuevos tendrán id mayor;
+// con los datos de ejemplo de database.sql es 15).
 async page => {
   const BASE = 'http://localhost/pwatarea6/';
   const BASE_ID = 15;
-  const CAP = 'C:/Users/jhoao/Desktop/pwatarea6 Grupo6/tests/capturas/';
+  // Las capturas se guardan en tests/capturas/, relativo a este script (no depende de dónde esté el repo).
+  // run-code evalúa el script como función suelta: si __dirname no existe, se usa la ruta desde la raíz del repo.
+  const CAP = (typeof __dirname !== 'undefined' ? __dirname + '/../capturas/' : 'tests/capturas/');
   const res = [];
   const paso = async (nombre, fn) => {
     try { const ev = await fn(); res.push({ paso: nombre, ok: true, ev: String(ev ?? '') }); }
@@ -123,10 +126,13 @@ async page => {
   // 6. Matriz 403
   const urlsRol = { Cliente: ['cliente/menu.php', 'cliente/mis_pedidos.php'], Chef: ['chef/cocina.php'], Camarero: ['camarero/dashboard.php', 'camarero/nuevo_pedido.php'], Admin: ['admin/dashboard.php', 'admin/platos.php', 'admin/usuarios.php', 'admin/pedidos.php'] };
   const pagRol = { Cliente: cli, Chef: chef, Camarero: cam, Admin: adm };
+  // Excepciones permitidas por la especificación: el chef ve la carta (solo lectura) y el admin crea pedidos
+  const permitidas = { Chef: ['cliente/menu.php'], Admin: ['camarero/nuevo_pedido.php'] };
   for (const rol of Object.keys(pagRol)) {
     for (const otro of Object.keys(urlsRol)) {
       if (otro === rol) continue;
       for (const u of urlsRol[otro]) {
+        if ((permitidas[rol] || []).includes(u)) continue;
         await paso('403. ' + rol + ' abre ' + u + (rol === 'Admin' && u === 'chef/cocina.php' ? ' (esperado: el admin tiene sus propias páginas)' : ''), async () => {
           const s = await ir(pagRol[rol], u);
           ok(s === 403, 'HTTP ' + s);

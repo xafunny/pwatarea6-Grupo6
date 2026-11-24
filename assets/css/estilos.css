@@ -5,7 +5,7 @@
      1. Tokens (variables de diseño y overrides de Bootstrap)
      2. Base (tipografía, fondo, selección, foco, scrollbar)
      3. Overrides de Bootstrap (botones, formularios, alertas, tablas, navbar)
-     4. Componentes propios (marca, tarjetas, KPI, estados, títulos, chips)
+     4. Componentes propios (marca, tarjetas, estados, títulos, chips)
      5. Layout por rol y por página (acceso, 403, chef...)
      6. Utilidades
      7. Responsive y movimiento reducido
@@ -352,38 +352,6 @@ a.card-ebano:hover,
     transform: translateY(-2px);
     box-shadow: var(--sombra-alta);
 }
-
-/* ---- KPI: etiqueta, número grande en serif e icono ---- */
-.kpi {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "etiqueta icono" "valor icono" "detalle detalle";
-    align-items: start;
-    gap: .25rem 1rem;
-}
-.kpi-etiqueta { grid-area: etiqueta; color: var(--texto-2); font-size: .8125rem; font-weight: 600; }
-.kpi-valor {
-    grid-area: valor;
-    font-family: var(--fuente-titulos);
-    font-size: clamp(2.25rem, 3vw + 1rem, 3rem);
-    font-weight: 600;
-    line-height: 1;
-    color: var(--texto);
-    font-variant-numeric: lining-nums tabular-nums;
-}
-.kpi-icono {
-    grid-area: icono;
-    display: grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border-radius: 12px;
-    background: rgba(var(--oro-rgb), .1);
-    border: 1px solid rgba(var(--oro-rgb), .25);
-    color: var(--oro);
-    font-size: 1.25rem;
-}
-.kpi-detalle { grid-area: detalle; color: var(--texto-2); font-size: .8125rem; margin-top: .5rem; }
 
 /* ---- Insignia de estado del pedido (el sufijo sale de clase_estado()) ---- */
 .badge-estado {
@@ -2140,7 +2108,6 @@ main > .seccion:last-child { padding-bottom: clamp(2rem, 4vw, 3.5rem); }
    6. UTILIDADES
    ========================================================================== */
 .texto-2 { color: var(--texto-2) !important; }
-.texto-oro { color: var(--oro) !important; }
 .numeros { font-variant-numeric: tabular-nums; }
 .precio {
     font-family: var(--fuente-titulos);
@@ -2148,7 +2115,6 @@ main > .seccion:last-child { padding-bottom: clamp(2rem, 4vw, 3.5rem); }
     color: var(--oro-claro);
     font-variant-numeric: lining-nums;
 }
-.fondo-superficie { background: var(--superficie) !important; }
 
 
 /* ==========================================================================

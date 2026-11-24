@@ -24,9 +24,9 @@ Si entras a la página de otro rol, el servidor responde **403**; sin sesión, t
 | Rol | Páginas | Qué puede hacer |
 |---|---|---|
 | **Cliente** | `cliente/menu.php`, `cliente/mis_pedidos.php` | Ver el menú con filtros por categoría, armar un carrito y hacer su pedido, ver el estado (línea de progreso de 4 pasos) y su historial. Se registra solo en `registro.php`. |
-| **Chef** | `chef/cocina.php` | Tablero de comandas (Pendiente, En preparación, Listo). Pasa Pendiente → En preparación → Listo. Se actualiza cada 20 s. |
-| **Camarero** | `camarero/dashboard.php`, `camarero/nuevo_pedido.php` | Ve "Listos para servir", sus pedidos asignados y los sin asignar. Entrega los pedidos listos (Listo → Entregado), toma pedidos sin asignar y crea pedidos a nombre de un cliente (quedan asignados a él). |
-| **Administrador** | `admin/dashboard.php`, `admin/platos.php`, `admin/usuarios.php`, `admin/pedidos.php` | Sala de control con KPI, CRUD de platos (también ocultar/mostrar), CRUD de usuarios y cambio de rol, ver todos los pedidos con filtros, cambiarlos de estado y eliminarlos. No puede borrarse a sí mismo ni quitarse el rol de administrador. |
+| **Chef** | `chef/cocina.php`, `cliente/menu.php` (solo lectura) | Tablero de comandas (Pendiente, En preparación, Listo). Pasa Pendiente → En preparación → Listo. Se actualiza cada 20 s. Puede ver la carta (enlace "Carta") con los filtros por categoría, pero sin carrito ni pedidos. |
+| **Camarero** | `camarero/dashboard.php`, `camarero/nuevo_pedido.php` | Ve "Listos para servir", sus pedidos asignados y los sin asignar. Entrega los pedidos listos (Listo → Entregado; el pedido queda asignado a quien lo entrega), toma pedidos sin asignar y crea pedidos a nombre de un cliente (quedan asignados a él). |
+| **Administrador** | `admin/dashboard.php`, `admin/platos.php`, `admin/usuarios.php`, `admin/pedidos.php`, `camarero/nuevo_pedido.php` | Sala de control con KPI, CRUD de platos (también ocultar/mostrar), CRUD de usuarios y cambio de rol, ver todos los pedidos con filtros, cambiarlos de estado y eliminarlos. Puede crear un pedido a nombre de un cliente con el botón "Nuevo pedido" de `admin/pedidos.php` (queda sin asignar para que un camarero lo tome). No puede borrarse a sí mismo ni quitarse el rol de administrador. |
 
 Reglas importantes: los estados solo avanzan (solo el administrador puede retroceder); un plato o usuario con pedidos
 no se puede borrar (el plato se puede ocultar). La tabla de transiciones está en `includes/funciones.php`.
@@ -63,7 +63,10 @@ no se puede borrar (el plato se puede ocultar). La tabla de transiciones está e
 1. Crea una cuenta en InfinityFree y un sitio de hosting (subdominio gratuito o dominio propio).
 2. En el panel, crea una base de datos MySQL. Anota el **host** (`sqlXXX.infinityfree.com`), el **nombre de la BD con prefijo**
    (por ejemplo `if0_12345678_restaurante`), el **usuario** (`if0_12345678`) y la contraseña.
-3. Abre el phpMyAdmin del panel, elige esa base y usa **Importar** con `database.sql`.
+3. Abre el phpMyAdmin del panel, elige esa base y usa **Importar** con `database.sql`. Verifica que la importación use
+   el juego de caracteres **utf8mb4** (es el valor por defecto de la pestaña Importar; el archivo ya trae `SET NAMES utf8mb4`)
+   y que la BD y sus tablas queden con cotejamiento `utf8mb4_unicode_ci`; si no, las tildes y la «ñ» se verán mal.
+   El archivo también fija la zona horaria `-05:00` para que los pedidos de ejemplo no queden en el futuro.
 4. Copia `config/config.example.php` como `config/config.php` y pon esos valores (`DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`).
    Deja `BASE_URL` en `''` (cadena vacía), porque el sitio vive en la raíz de `htdocs`.
 5. Sube todos los archivos a `/htdocs` con el File Manager en línea o con FileZilla (los datos FTP salen del panel).
@@ -126,8 +129,8 @@ En el repositorio queda `config/config.example.php` como plantilla.
 
 | Criterio | Dónde se ve |
 |---|---|
-| **Comprensión de PHP** (include/require, funciones, variables) | Cada página empieza con `require_once '../includes/auth.php'`, que a su vez encadena `sesion.php`, `funciones.php`, `db.php` y `usuarios.php`. Las páginas incluyen `header.php`, `navbar.php` y `footer.php` con `require`. Funciones propias en `includes/*.php` (`e()`, `url()`, `crear_pedidos()`, `cambiar_estado()`, `guardar_plato()`...). Variables de plantilla como `$titulo_pagina`, `$scripts_pagina` y `$usuario`. |
-| **Comprensión de CSS** | `assets/css/estilos.css`: tokens en `:root` (paleta, tipografía), overrides de Bootstrap, componentes (tarjeta de plato, KPI, insignias de estado, chips, ticket de cocina) y layout por rol, con índice al inicio y responsive desde 360 px. |
+| **Comprensión de PHP** (include/require, funciones, variables) | Cada página empieza con `require_once __DIR__ . '/../includes/auth.php';`, que a su vez encadena `sesion.php`, `funciones.php`, `db.php` y `usuarios.php`. Las páginas incluyen `header.php`, `navbar.php` y `footer.php` con `require`. Funciones propias en `includes/*.php` (`e()`, `url()`, `crear_pedidos()`, `cambiar_estado()`, `guardar_plato()`...). Variables de plantilla como `$titulo_pagina`, `$scripts_pagina` y `$usuario`. |
+| **Comprensión de CSS** | `assets/css/estilos.css`: tokens en `:root` (paleta, tipografía), overrides de Bootstrap, componentes (tarjeta de plato, insignias de estado, chips, ticket de cocina) y layout por rol, con índice al inicio y responsive desde 360 px. |
 | **Comprensión de JavaScript** | `carrito.js` (carrito en `localStorage`, filtros por categoría); `cocina.js` (`fetch` con actualización automática cada 20 s y cambio de estado por POST con token CSRF); `app.js` (GSAP + ScrollTrigger dentro de `gsap.matchMedia()`, validación y contadores); `admin.js` (modales de platos y usuarios, confirmación de borrado). |
 | **Desarrollo PHP** (estructura de la aplicación) | Una página por pantalla, partes comunes en `includes/`, SQL aislado en `usuarios.php`, `platos.php` y `pedidos.php`, patrón POST-redirect-GET con mensajes `flash()`, roles con `requerir_rol()` y la API JSON `chef/api_pedidos.php`. |
 | **Estilos y diseño** | Tema oscuro con acentos dorados ("Noche elegante"), un dashboard distinto por rol (KPI del administrador, kanban del chef, "el pase" del camarero, carrito lateral del cliente), animaciones cortas que respetan `prefers-reduced-motion`. |

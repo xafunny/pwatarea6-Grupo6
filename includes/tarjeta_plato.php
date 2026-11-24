@@ -34,7 +34,7 @@ $tiene_foto = trim((string) ($plato['image'] ?? '')) !== '';
         <div class="plato-pie">
             <span class="plato-precio precio"><?= e(dinero((float) $plato['price'])) ?></span>
             <?php if ($mostrar_boton): ?>
-                <!-- data-*: el carrito (Task 5) lee aquí el id, el nombre y el precio del plato -->
+                <!-- data-*: el carrito (carrito.js) lee aquí el id, el nombre y el precio del plato -->
                 <button type="button" class="btn btn-oro btn-sm btn-anadir"
                         data-id="<?= e((string) $plato['id']) ?>"
                         data-nombre="<?= e($plato['name']) ?>"

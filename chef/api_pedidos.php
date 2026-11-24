@@ -1,7 +1,7 @@
 <?php
 /**
  * API JSON del tablero de cocina (la consume assets/js/cocina.js con fetch).
- * - GET  → {"pedidos": [...], "servidor": "<hora ISO>"}: las comandas Pending, Preparing y Ready to serve.
+ * - GET  → {"pedidos": [...]}: las comandas Pending, Preparing y Ready to serve.
  * - POST → cuerpo JSON {"id": int, "estado": string} + cabecera X-CSRF-Token.
  *          Responde {"ok": bool, "mensaje": string}: 200 si cambió, 400 si los datos no sirven,
  *          422 si el paso no está permitido o alguien cambió la comanda antes (carrera).
@@ -51,7 +51,7 @@ if ($metodo === 'GET') {
         error_log('api_pedidos GET: ' . $ex->getMessage()); // el detalle queda en el log, no en la respuesta
         responder_json(500, ['pedidos' => [], 'mensaje' => 'No se pudieron cargar las comandas.']);
     }
-    responder_json(200, ['pedidos' => $pedidos, 'servidor' => date(DATE_ATOM)]);
+    responder_json(200, ['pedidos' => $pedidos]);
 }
 
 if ($metodo !== 'POST') {
