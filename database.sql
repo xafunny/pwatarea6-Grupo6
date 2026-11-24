@@ -6,6 +6,8 @@
 -- Orden: 1) DDL literal del enunciado  2) extensiones del grupo  3) datos de prueba
 -- ============================================================
 SET NAMES utf8mb4;
+-- Los pedidos de ejemplo usan NOW(): si el servidor MySQL está en UTC, quedarían en el futuro respecto a la app.
+SET time_zone = '-05:00'; -- mismo reloj que conectar() en includes/db.php
 SET FOREIGN_KEY_CHECKS=0;
 
 -- Se borran en orden inverso a las dependencias para poder re-importar el archivo

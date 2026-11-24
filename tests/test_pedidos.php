@@ -155,6 +155,22 @@ comprobar('camarero puede pasar de Ready to serve a Served', cambiar_estado($id_
 $asignado = (int) fila_pedido($id_nuevo)['waiter_id'];
 comprobar('el pedido queda asignado al camarero', $asignado === $camarero['id']);
 
+// Entregar un pedido que era de otro camarero: pasa a ser de quien lo entrega (spec §12.4).
+// Se crea un segundo camarero temporal y se borra al final (el seed solo trae uno).
+$pdo->prepare("INSERT INTO users (username, email, password, role_id) VALUES ('Camarero temporal', 'temporal-camarero@ebano.test', 'x', (SELECT id FROM roles WHERE name = 'Waiter'))")->execute();
+$id_camarero_temporal = (int) $pdo->lastInsertId();
+$camarero_temporal = ['id' => $id_camarero_temporal, 'role' => 'Waiter'];
+crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]], $camarero_temporal['id']);
+$id_ajeno = (int) $pdo->query('SELECT MAX(id) FROM orders')->fetchColumn();
+cambiar_estado($id_ajeno, 'Preparing', $chef);
+cambiar_estado($id_ajeno, 'Ready to serve', $chef);
+comprobar('el pedido es del camarero temporal antes de entregarlo', (int) fila_pedido($id_ajeno)['waiter_id'] === $id_camarero_temporal);
+comprobar('otro camarero puede entregar un pedido ajeno', cambiar_estado($id_ajeno, 'Served', $camarero) === true);
+comprobar('el pedido entregado pasa a ser de quien lo entregó', (int) fila_pedido($id_ajeno)['waiter_id'] === $camarero['id']);
+// Limpieza: primero el pedido de prueba y luego el camarero temporal
+$pdo->prepare('DELETE FROM orders WHERE id = ?')->execute([$id_ajeno]);
+$pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$id_camarero_temporal]);
+
 // pedidos_cocina(): solo los 3 estados de cocina, del más viejo al más nuevo
 crear_pedidos($cliente_id, [['dish_id' => 1, 'quantity' => 1]]); // garantiza al menos uno Pending
 $cocina = pedidos_cocina();

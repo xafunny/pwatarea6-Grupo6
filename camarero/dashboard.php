@@ -86,7 +86,7 @@ $titulo_pagina = 'Panel de sala';
 $clase_body = 'rol-camarero pagina-sala';
 // Tras registrar un pedido (?nuevo=1) se borra el carrito del camarero: carrito.js lee este atributo
 if (($_GET['nuevo'] ?? '') === '1') {
-    $atributos_body = ['data-vaciar-carrito' => CLAVE_CARRITO_CAMARERO];
+    $atributos_body = ['data-vaciar-carrito' => clave_carrito(CLAVE_CARRITO_CAMARERO, (int) $usuario['id'])];
     $scripts_pagina = ['assets/js/carrito.js'];
 }
 require __DIR__ . '/../includes/header.php';

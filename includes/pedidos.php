@@ -20,10 +20,20 @@ const CANTIDAD_MAXIMA = 20;
 const MAX_PLATOS_POR_PEDIDO = 30;
 /** Minutos de espera a partir de los cuales una comanda de cocina se marca como urgente. */
 const MINUTOS_URGENTE = 15;
-/** Clave de localStorage del carrito del cliente (la usan menu.php y mis_pedidos.php). */
+/** Prefijo de la clave de localStorage del carrito del cliente (la usan menu.php y mis_pedidos.php). */
 const CLAVE_CARRITO_CLIENTE = 'ebano_carrito_cliente';
-/** Clave del carrito del camarero: distinta, para que no se mezcle con el del cliente en un mismo navegador. */
+/** Prefijo del carrito de quien toma el pedido en sala (camarero o administrador): distinto del del cliente. */
 const CLAVE_CARRITO_CAMARERO = 'ebano_carrito_camarero';
+
+/**
+ * Clave final de localStorage de un carrito: el prefijo más el id del usuario ('ebano_carrito_cliente_4').
+ * localStorage es del navegador, no de la cuenta: sin el id, el carrito de una persona
+ * le aparecería a la siguiente que inicie sesión en el mismo equipo.
+ */
+function clave_carrito(string $prefijo, int $usuario_id): string
+{
+    return $prefijo . '_' . $usuario_id;
+}
 
 /**
  * Convierte los campos items[id_plato] = cantidad que manda carrito.js en la lista que espera crear_pedidos().
@@ -325,7 +335,7 @@ function tomar_pedido(int $pedido_id, int $camarero_id): bool
 function cambiar_estado(int $pedido_id, string $nuevo, array $usuario): bool
 {
     $pdo = conectar();
-    $st = $pdo->prepare('SELECT status, waiter_id FROM orders WHERE id = ?');
+    $st = $pdo->prepare('SELECT status FROM orders WHERE id = ?');
     $st->execute([$pedido_id]);
     $pedido = $st->fetch();
 
@@ -335,8 +345,8 @@ function cambiar_estado(int $pedido_id, string $nuevo, array $usuario): bool
 
     // "AND status = ?": si otra persona cambió el pedido entre la lectura y este UPDATE,
     // no se pisa su cambio (la consulta no afecta ninguna fila y se devuelve false)
-    if ($usuario['role'] === 'Waiter' && $pedido['waiter_id'] === null) {
-        // El camarero que atiende un pedido sin asignar se lo queda
+    if ($usuario['role'] === 'Waiter' && $nuevo === 'Served') {
+        // Quien entrega el pedido en la mesa queda como su camarero (spec §12.4), aunque antes fuera de otro
         $up = $pdo->prepare('UPDATE orders SET status = ?, waiter_id = ? WHERE id = ? AND status = ?');
         $up->execute([$nuevo, (int) $usuario['id'], $pedido_id, $pedido['status']]);
     } else {

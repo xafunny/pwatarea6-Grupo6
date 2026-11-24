@@ -1,11 +1,13 @@
 <?php
 /**
- * Nuevo pedido (camarero): registra lo que pide una mesa a nombre de un cliente.
+ * Nuevo pedido (camarero o administrador): registra lo que pide una mesa a nombre de un cliente.
  * Paso 1: elegir al cliente (select con obtener_clientes()).
  * Paso 2: elegir los platos con la misma carta del cliente (tarjeta_plato.php) y el carrito de carrito.js,
- *         guardado con otra clave (CLAVE_CARRITO_CAMARERO) para no mezclarlo con el del cliente.
+ *         guardado con otra clave (CLAVE_CARRITO_CAMARERO + id) para no mezclarlo con el del cliente.
  * POST (accion=pedir): verifica CSRF, comprueba en el servidor que cliente_id sea de verdad un Client
- * (nombre_cliente) y crea los pedidos ya asignados a este camarero. Patrón PRG con mensaje flash.
+ * (nombre_cliente) y crea los pedidos. Si lo hace un camarero quedan asignados a él; si lo hace el
+ * administrador quedan sin asignar (waiter_id NULL) para que cualquier camarero los tome.
+ * Patrón PRG con mensaje flash: cada rol vuelve a su propio panel.
  */
 
 require_once __DIR__ . '/../includes/auth.php';
@@ -13,7 +15,8 @@ require_once __DIR__ . '/../includes/platos.php';
 require_once __DIR__ . '/../includes/pedidos.php';
 require_once __DIR__ . '/../includes/usuarios.php';
 
-$usuario = requerir_rol(['Waiter']);
+$usuario = requerir_rol(['Waiter', 'Administrator']);
+$es_camarero = $usuario['role'] === 'Waiter';
 
 // ---- POST: registrar el pedido de la mesa ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -34,9 +37,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        crear_pedidos($cliente_id, items_desde_post($_POST['items'] ?? null), $usuario['id']);
+        // Solo el camarero queda como responsable; el pedido del administrador queda sin asignar
+        crear_pedidos($cliente_id, items_desde_post($_POST['items'] ?? null), $es_camarero ? (int) $usuario['id'] : null);
         flash('success', 'Pedido registrado para ' . $nombre_cliente); // mostrar_flash() lo escapa al imprimirlo
-        redirigir('camarero/dashboard.php?nuevo=1');
+        // ?nuevo=1 hace que la página de destino borre el carrito guardado
+        redirigir($es_camarero ? 'camarero/dashboard.php?nuevo=1' : 'admin/pedidos.php?nuevo=1');
     } catch (InvalidArgumentException $ex) {
         flash('danger', $ex->getMessage()); // el carrito sigue guardado: se corrige y se reenvía
     }
@@ -59,7 +64,7 @@ foreach ($platos as $plato) {
 $carta = array_filter($carta); // sin secciones vacías
 
 $titulo_pagina = 'Nuevo pedido';
-$clase_body = 'rol-camarero pagina-nuevo-pedido';
+$clase_body = ($es_camarero ? 'rol-camarero' : 'rol-admin') . ' pagina-nuevo-pedido';
 $scripts_pagina = ['assets/js/carrito.js'];
 require __DIR__ . '/../includes/header.php';
 ?>
@@ -67,10 +72,11 @@ require __DIR__ . '/../includes/header.php';
     <header class="sala-cabecera">
         <div class="titulo-seccion mb-0 anim-item">
             <h1>Nuevo pedido</h1>
-            <p>Anota lo que pide la mesa: elige al cliente, añade los platos y envíalo a cocina. El pedido queda a tu cargo.</p>
+            <p>Anota lo que pide la mesa: elige al cliente, añade los platos y envíalo a cocina.
+                <?= $es_camarero ? 'El pedido queda a tu cargo.' : 'El pedido queda sin asignar hasta que un camarero lo tome.' ?></p>
         </div>
-        <a class="btn btn-contorno anim-item" href="<?= e(url('camarero/dashboard.php')) ?>">
-            <i class="bi bi-arrow-left" aria-hidden="true"></i> Volver a la sala
+        <a class="btn btn-contorno anim-item" href="<?= e(url($es_camarero ? 'camarero/dashboard.php' : 'admin/pedidos.php')) ?>">
+            <i class="bi bi-arrow-left" aria-hidden="true"></i> <?= $es_camarero ? 'Volver a la sala' : 'Volver a pedidos' ?>
         </a>
     </header>
 
@@ -154,7 +160,7 @@ require __DIR__ . '/../includes/header.php';
 
         <!-- Carrito lateral: el mismo formulario que el del cliente, con otra clave de localStorage -->
         <form class="offcanvas offcanvas-end carrito" id="carrito" tabindex="-1" aria-labelledby="carrito-titulo"
-              method="post" action="<?= e(url('camarero/nuevo_pedido.php')) ?>" data-carrito="<?= e(CLAVE_CARRITO_CAMARERO) ?>">
+              method="post" action="<?= e(url('camarero/nuevo_pedido.php')) ?>" data-carrito="<?= e(clave_carrito(CLAVE_CARRITO_CAMARERO, (int) $usuario['id'])) ?>">
             <?= campo_csrf() ?>
             <input type="hidden" name="accion" value="pedir">
             <div data-carrito-campos></div>
@@ -186,7 +192,7 @@ require __DIR__ . '/../includes/header.php';
                     <span>Total</span>
                     <span class="precio" data-carrito-total>$0.00</span>
                 </div>
-                <p class="carrito-nota">Al confirmar, el pedido entra al tablero de la cocina y queda asignado a ti.</p>
+                <p class="carrito-nota">Al confirmar, el pedido entra al tablero de la cocina<?= $es_camarero ? ' y queda asignado a ti' : ' sin camarero asignado' ?>.</p>
                 <button type="submit" class="btn btn-oro btn-lg w-100" data-carrito-confirmar disabled>
                     Enviar a cocina
                 </button>

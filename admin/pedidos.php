@@ -4,6 +4,8 @@
  * - Filtros por GET: estado (chips "Todos" + los 4 estados) y q (búsqueda por cliente, correo o plato).
  * - Tabla con todos los pedidos (máximo 200, del más nuevo al más viejo).
  * - Cada fila tiene un <select> para llevar el pedido a CUALQUIER estado y un botón para eliminarlo.
+ * - El botón "Nuevo pedido" lleva a camarero/nuevo_pedido.php (el administrador también puede pedir a nombre
+ *   de un cliente); al volver con ?nuevo=1 se borra el carrito guardado de esa pantalla.
  * POST (patrón PRG, con CSRF):
  *   accion=estado   -> cambiar_estado() (el rol Administrator puede hacer cualquier transición)
  *   accion=eliminar -> eliminar_pedido()
@@ -75,14 +77,22 @@ $pedidos = todos_los_pedidos($filtros['estado'], $filtros['q']);
 $titulo_pagina = 'Pedidos';
 $clase_body = 'rol-admin pagina-gestion';
 $scripts_pagina = ['assets/js/admin.js'];
+// Tras registrar un pedido (?nuevo=1) carrito.js borra el carrito del administrador (lee este atributo)
+if (($_GET['nuevo'] ?? '') === '1') {
+    $atributos_body = ['data-vaciar-carrito' => clave_carrito(CLAVE_CARRITO_CAMARERO, (int) $usuario['id'])];
+    $scripts_pagina[] = 'assets/js/carrito.js';
+}
 require __DIR__ . '/../includes/header.php';
 ?>
 <div class="container gestion">
     <header class="gestion-cabecera anim-item">
         <div>
             <h1 class="gestion-titulo">Pedidos</h1>
-            <p class="gestion-resumen">Todos los pedidos del restaurante. Como administrador puedes llevar cualquiera a cualquier estado.</p>
+            <p class="gestion-resumen">Todos los pedidos del restaurante. Como administrador puedes llevar cualquiera a cualquier estado o registrar uno nuevo a nombre de un cliente.</p>
         </div>
+        <a class="btn btn-oro" href="<?= e(url('camarero/nuevo_pedido.php')) ?>">
+            <i class="bi bi-plus-lg" aria-hidden="true"></i> Nuevo pedido
+        </a>
     </header>
 
     <!-- Filtros: enlaces GET (los chips) y un formulario GET (la búsqueda); se pueden combinar -->
