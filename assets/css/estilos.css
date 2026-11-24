@@ -1,0 +1,2228 @@
+/* ==========================================================================
+   Ébano · Hoja de estilos propia ("Noche elegante")
+   Se carga DESPUÉS de Bootstrap 5.3.3 para personalizarlo.
+   Índice:
+     1. Tokens (variables de diseño y overrides de Bootstrap)
+     2. Base (tipografía, fondo, selección, foco, scrollbar)
+     3. Overrides de Bootstrap (botones, formularios, alertas, tablas, navbar)
+     4. Componentes propios (marca, tarjetas, estados, títulos, chips)
+     5. Layout por rol y por página (acceso, 403, chef...)
+     6. Utilidades
+     7. Responsive y movimiento reducido
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. TOKENS
+   La paleta vive en variables: cambiar un color aquí lo cambia en todo el sitio.
+   ========================================================================== */
+:root,
+[data-bs-theme="dark"] {
+    /* Paleta base */
+    --fondo: #0E0E11;
+    --superficie: #16161B;
+    --elevada: #1E1E25;
+    --borde: #2A2A33;
+    --borde-fuerte: #3A3A45;
+    --texto: #ECE6D8;
+    --texto-2: #A39E93;           /* secundario: 7.3:1 sobre el fondo, cumple AA */
+    --oro: #C9A45C;
+    --oro-claro: #E2C78C;
+    --oro-apagado: color-mix(in srgb, var(--oro) 62%, var(--superficie)); /* pasos ya completados */
+    --oro-rgb: 201, 164, 92;
+    --fondo-rgb: 14, 14, 17;      /* el fondo en RGB, para velos translúcidos: rgba(var(--fondo-rgb), .5) */
+    --texto-realce: #FFF8EA;      /* blanco cálido para títulos grandes sobre foto */
+    --texto-sobre-foto: color-mix(in srgb, var(--texto) 70%, var(--texto-2)); /* un punto más claro que --texto-2 */
+    --tinta-sobre-oro: #17130B;   /* texto encima de un botón dorado (contraste 8:1) */
+
+    /* Estados del pedido: tonos apagados para que no griten sobre lo oscuro */
+    --estado-pendiente: #E0B252;  /* ámbar */
+    --estado-preparando: #D9925F; /* cobre */
+    --estado-listo: #9EBD98;      /* verde salvia */
+    --estado-servido: #ADA89E;    /* gris piedra */
+    --peligro: #E08A7E;
+    --exito: #9EBD98;
+
+    /* Tipografía */
+    --fuente-titulos: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --fuente-texto: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Forma, profundidad y movimiento */
+    --radio-sm: 8px;
+    --radio: 14px;
+    --radio-lg: 22px;
+    --sombra: 0 10px 30px -12px rgba(0, 0, 0, .65), 0 2px 6px rgba(0, 0, 0, .35);
+    --sombra-alta: 0 24px 50px -18px rgba(0, 0, 0, .8), 0 4px 12px rgba(0, 0, 0, .4);
+    --curva: cubic-bezier(.22, 1, .36, 1); /* salida exponencial suave */
+    --rapido: .18s;
+    --medio: .35s;
+
+    /* Overrides de las variables de Bootstrap (modo oscuro) */
+    --bs-body-bg: var(--fondo);
+    --bs-body-bg-rgb: var(--fondo-rgb);
+    --bs-body-color: var(--texto);
+    --bs-body-color-rgb: 236, 230, 216;
+    --bs-body-font-family: var(--fuente-texto);
+    --bs-emphasis-color: var(--texto-realce);
+    --bs-heading-color: var(--texto);
+    --bs-secondary-color: var(--texto-2);
+    --bs-secondary-bg: var(--superficie);
+    --bs-tertiary-bg: var(--elevada);
+    --bs-border-color: var(--borde);
+    --bs-border-color-translucent: rgba(236, 230, 216, .09);
+    --bs-border-radius: var(--radio-sm);
+    --bs-border-radius-lg: var(--radio);
+    --bs-primary: var(--oro);
+    --bs-primary-rgb: var(--oro-rgb);
+    --bs-link-color: var(--oro-claro);
+    --bs-link-color-rgb: 226, 199, 140;
+    --bs-link-hover-color: #F1DDB0;
+    --bs-link-hover-color-rgb: 241, 221, 176;
+    --bs-focus-ring-color: rgba(var(--oro-rgb), .45);
+    --bs-form-valid-color: var(--exito);
+    --bs-form-valid-border-color: var(--exito);
+    --bs-form-invalid-color: var(--peligro);
+    --bs-form-invalid-border-color: var(--peligro);
+    --bs-code-color: var(--oro-claro);
+}
+
+
+/* ==========================================================================
+   2. BASE
+   ========================================================================== */
+body {
+    /* Un halo cálido muy tenue arriba a la derecha, como una lámpara sobre la sala */
+    background:
+        radial-gradient(1100px 520px at 88% -8%, rgba(var(--oro-rgb), .07), transparent 62%),
+        var(--fondo);
+    background-attachment: fixed;
+    color: var(--texto);
+    font-family: var(--fuente-texto);
+    font-size: 1rem;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+main { flex: 1 0 auto; }
+main:focus { outline: none; } /* destino del enlace "Saltar al contenido" */
+
+h1, h2, h3, .serif {
+    font-family: var(--fuente-titulos);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.12;
+    text-wrap: balance;
+}
+h4, h5, h6 { font-family: var(--fuente-texto); font-weight: 700; }
+
+p { text-wrap: pretty; }
+
+a { text-underline-offset: .2em; text-decoration-thickness: 1px; }
+
+::selection { background: rgba(var(--oro-rgb), .35); color: var(--texto-realce); }
+
+input, textarea { caret-color: var(--oro); }
+
+/* Foco visible en dorado para TODO lo que se maneja con teclado */
+:focus-visible {
+    outline: 2px solid var(--oro-claro);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* Barra de desplazamiento a juego con la paleta (Firefox y Chromium) */
+html { scrollbar-color: var(--borde-fuerte) var(--fondo); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--fondo); }
+::-webkit-scrollbar-thumb { background: var(--borde-fuerte); border-radius: 10px; border: 2px solid var(--fondo); }
+
+/* Enlace oculto que aparece al tabular: salta la barra de navegación */
+.saltar-contenido {
+    position: absolute;
+    left: 1rem;
+    top: -4rem;
+    z-index: 2000;
+    padding: .6rem 1rem;
+    background: var(--oro);
+    color: var(--tinta-sobre-oro);
+    font-weight: 700;
+    border-radius: var(--radio-sm);
+    text-decoration: none;
+}
+.saltar-contenido:focus { top: 1rem; }
+
+
+/* ==========================================================================
+   3. OVERRIDES DE BOOTSTRAP
+   ========================================================================== */
+
+/* ---- Botones ---- */
+.btn {
+    --bs-btn-font-weight: 600;
+    --bs-btn-border-radius: 999px;
+    --bs-btn-padding-x: 1.25rem;
+    --bs-btn-focus-box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .4);
+    letter-spacing: .01em;
+    transition: transform var(--rapido) var(--curva), background-color var(--rapido), border-color var(--rapido),
+                color var(--rapido), box-shadow var(--rapido);
+}
+.btn:active { transform: translateY(1px) scale(.985); } /* "presión" al hacer clic */
+.btn-lg { --bs-btn-padding-y: .8rem; --bs-btn-font-size: 1rem; }
+.btn-sm { --bs-btn-padding-x: .9rem; }
+
+/* Botón principal: oro sólido con texto oscuro */
+.btn-oro {
+    --bs-btn-color: var(--tinta-sobre-oro);
+    --bs-btn-bg: var(--oro);
+    --bs-btn-border-color: var(--oro);
+    --bs-btn-hover-color: var(--tinta-sobre-oro);
+    --bs-btn-hover-bg: var(--oro-claro);
+    --bs-btn-hover-border-color: var(--oro-claro);
+    --bs-btn-active-color: var(--tinta-sobre-oro);
+    --bs-btn-active-bg: #B8934D;
+    --bs-btn-active-border-color: #B8934D;
+    --bs-btn-disabled-color: var(--tinta-sobre-oro);
+    --bs-btn-disabled-bg: var(--oro);
+    --bs-btn-disabled-border-color: var(--oro);
+    box-shadow: 0 6px 18px -8px rgba(var(--oro-rgb), .55);
+}
+.btn-oro:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -10px rgba(var(--oro-rgb), .7); }
+
+/* Botón secundario: contorno fino que se ilumina en oro */
+.btn-contorno {
+    --bs-btn-color: var(--texto);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: var(--borde-fuerte);
+    --bs-btn-hover-color: var(--oro-claro);
+    --bs-btn-hover-bg: rgba(var(--oro-rgb), .08);
+    --bs-btn-hover-border-color: var(--oro);
+    --bs-btn-active-color: var(--oro-claro);
+    --bs-btn-active-bg: rgba(var(--oro-rgb), .14);
+    --bs-btn-active-border-color: var(--oro);
+    --bs-btn-disabled-color: var(--texto-2);
+    --bs-btn-disabled-border-color: var(--borde);
+}
+
+/* ---- Formularios ---- */
+.form-label {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--texto);
+    margin-bottom: .4rem;
+}
+.form-text { color: var(--texto-2); font-size: .8125rem; }
+
+.form-control,
+.form-select {
+    background-color: #121216;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-sm);
+    color: var(--texto);
+    padding: .7rem .9rem;
+    transition: border-color var(--rapido), box-shadow var(--rapido), background-color var(--rapido);
+}
+.form-control::placeholder { color: #8F8A80; opacity: 1; } /* 5:1 sobre el campo */
+.form-control:hover,
+.form-select:hover { border-color: var(--borde-fuerte); }
+.form-control:focus,
+.form-select:focus {
+    background-color: #141419;
+    border-color: var(--oro);
+    color: var(--texto);
+    box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .22);
+}
+.form-control:focus-visible,
+.form-select:focus-visible { outline: none; } /* el anillo dorado del box-shadow ya marca el foco */
+.form-control:disabled { background-color: var(--superficie); color: var(--texto-2); }
+
+/* El autocompletado del navegador no debe pintar los campos de amarillo claro */
+.form-control:-webkit-autofill {
+    -webkit-text-fill-color: var(--texto);
+    -webkit-box-shadow: 0 0 0 100px #141419 inset;
+    caret-color: var(--oro);
+}
+
+.form-check-input { background-color: #121216; border-color: var(--borde-fuerte); }
+.form-check-input:checked { background-color: var(--oro); border-color: var(--oro); }
+.form-check-input:focus { border-color: var(--oro); box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .25); }
+
+.invalid-feedback { font-size: .8125rem; }
+
+/* ---- Alertas (flash): fondo tintado, borde del mismo tono ---- */
+.alert {
+    --bs-alert-border-radius: var(--radio-sm);
+    border-width: 1px;
+    font-size: .9375rem;
+}
+.alert-success { --bs-alert-bg: rgba(158, 189, 152, .1); --bs-alert-border-color: rgba(158, 189, 152, .35); --bs-alert-color: #C4DABF; }
+.alert-danger  { --bs-alert-bg: color-mix(in srgb, var(--peligro) 10%, transparent); --bs-alert-border-color: color-mix(in srgb, var(--peligro) 38%, transparent); --bs-alert-color: #F0B5AC; }
+.alert-warning { --bs-alert-bg: color-mix(in srgb, var(--estado-pendiente) 10%, transparent); --bs-alert-border-color: color-mix(in srgb, var(--estado-pendiente) 35%, transparent); --bs-alert-color: #EED29A; }
+.alert-info    { --bs-alert-bg: rgba(var(--oro-rgb), .08); --bs-alert-border-color: rgba(var(--oro-rgb), .3); --bs-alert-color: var(--oro-claro); }
+.alert .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
+
+/* ---- Navbar: vidrio oscuro con desenfoque, para que el contenido se intuya debajo al hacer scroll ---- */
+.navbar-ebano {
+    background: rgba(var(--fondo-rgb),.72);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+    backdrop-filter: saturate(140%) blur(14px);
+    border-bottom: 1px solid var(--bs-border-color-translucent);
+    padding-block: .75rem;
+    --bs-navbar-color: var(--texto-2);
+    --bs-navbar-hover-color: var(--texto);
+    --bs-navbar-active-color: var(--oro-claro);
+    --bs-navbar-toggler-border-color: var(--borde-fuerte);
+}
+.navbar-ebano .nav-link {
+    position: relative;
+    font-weight: 500;
+    font-size: .9375rem;
+    padding-inline: .85rem !important;
+    border-radius: 999px;
+    transition: color var(--rapido), background-color var(--rapido);
+}
+.navbar-ebano .nav-link .bi { margin-right: .3rem; opacity: .85; }
+.navbar-ebano .nav-link:hover { background: rgba(236, 230, 216, .05); }
+.navbar-ebano .nav-link.active { background: rgba(var(--oro-rgb), .1); }
+.navbar-ebano .navbar-toggler { color: var(--texto); font-size: 1.5rem; padding: .25rem .6rem; border-radius: var(--radio-sm); }
+.navbar-ebano .navbar-toggler:focus { box-shadow: none; }          /* con mouse, sin anillo */
+.navbar-ebano .navbar-toggler:focus-visible { box-shadow: 0 0 0 .2rem rgba(var(--oro-rgb), .45); } /* con teclado, sí */
+
+.nav-usuario { display: flex; align-items: center; gap: .75rem; }
+.nav-usuario-nombre { font-weight: 600; font-size: .9375rem; color: var(--texto); }
+
+/* ---- Tablas ---- */
+.table { --bs-table-bg: transparent; --bs-table-color: var(--texto); --bs-table-border-color: var(--borde); }
+
+
+/* ==========================================================================
+   4. COMPONENTES PROPIOS (se reutilizan en todas las páginas)
+   ========================================================================== */
+
+/* ---- Marca: rombo dorado + "Ébano" en serif ---- */
+.marca {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    color: var(--texto);
+    text-decoration: none;
+}
+.marca:hover { color: var(--texto); }
+.marca-icono { color: var(--oro); flex-shrink: 0; transition: transform var(--medio) var(--curva); }
+.marca:hover .marca-icono { transform: rotate(45deg); }
+.marca-nombre {
+    font-family: var(--fuente-titulos);
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    line-height: 1;
+}
+
+/* ---- Insignia del rol en la barra ---- */
+.badge-rol {
+    display: inline-block;
+    padding: .2rem .6rem;
+    border: 1px solid rgba(var(--oro-rgb), .45);
+    border-radius: 999px;
+    color: var(--oro-claro);
+    font-size: .6875rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+/* ---- Tarjeta base ---- */
+.card-ebano {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: 1.5rem;
+    transition: border-color var(--medio) var(--curva), transform var(--medio) var(--curva), box-shadow var(--medio) var(--curva);
+}
+/* Solo las tarjetas que son enlace o que piden reacción se elevan al pasar el mouse */
+a.card-ebano,
+.card-ebano.interactiva { color: inherit; text-decoration: none; }
+a.card-ebano:hover,
+.card-ebano.interactiva:hover {
+    border-color: rgba(var(--oro-rgb), .55);
+    transform: translateY(-2px);
+    box-shadow: var(--sombra-alta);
+}
+
+/* ---- Insignia de estado del pedido (el sufijo sale de clase_estado()) ---- */
+.badge-estado {
+    --tono: var(--estado-servido);
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent);
+    background: color-mix(in srgb, var(--tono) 12%, transparent);
+    color: var(--tono);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.badge-estado::before { /* punto de color: el estado no depende solo del texto */
+    content: "";
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: currentColor;
+}
+.badge-estado.pendiente  { --tono: var(--estado-pendiente); }
+.badge-estado.preparando { --tono: var(--estado-preparando); }
+.badge-estado.listo      { --tono: var(--estado-listo); }
+.badge-estado.servido    { --tono: var(--estado-servido); }
+
+/* ---- Título de sección: antetítulo dorado en versalitas + título serif ---- */
+.titulo-seccion { margin-bottom: 2rem; }
+.titulo-seccion .antetitulo {
+    display: block;
+    margin-bottom: .5rem;
+    color: var(--oro);
+    font-family: var(--fuente-texto);
+    font-size: .78rem;
+    font-weight: 700;
+    font-variant: small-caps;
+    letter-spacing: .14em;
+    text-transform: lowercase; /* con small-caps se ve como versalitas reales */
+}
+.titulo-seccion h1,
+.titulo-seccion h2 { margin: 0; }
+.titulo-seccion h1 { font-size: clamp(2.25rem, 3.5vw + 1rem, 3.5rem); }
+.titulo-seccion h2 { font-size: clamp(1.85rem, 2.4vw + 1rem, 2.6rem); }
+.titulo-seccion p { color: var(--texto-2); margin: .75rem 0 0; max-width: 60ch; }
+
+/* ---- Tabla Ébano: filas espaciadas, cabecera discreta, números tabulares ---- */
+.tabla-ebano {
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: rgba(var(--oro-rgb), .05);
+    --bs-table-hover-color: var(--texto);
+    margin-bottom: 0;
+    font-variant-numeric: tabular-nums;
+}
+.tabla-ebano > thead th {
+    color: var(--texto-2);
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border-bottom-color: var(--borde-fuerte);
+    padding-block: .8rem;
+    white-space: nowrap;
+}
+.tabla-ebano > tbody > tr > td { padding-block: .85rem; vertical-align: middle; border-bottom-color: var(--borde); }
+.tabla-ebano > tbody > tr:last-child > td { border-bottom: 0; }
+.tabla-ebano > caption { color: var(--texto-2); font-size: .8125rem; caption-side: bottom; padding-top: .75rem; }
+
+/* ---- Chip: píldora de filtro por categoría ---- */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem 1rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--texto-2);
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color var(--rapido), border-color var(--rapido), background-color var(--rapido), transform var(--rapido) var(--curva);
+}
+.chip:hover { color: var(--texto); border-color: rgba(var(--oro-rgb), .6); }
+.chip:active { transform: scale(.97); }
+.chip.activo,
+.chip[aria-pressed="true"] {
+    background: var(--oro);
+    border-color: var(--oro);
+    color: var(--tinta-sobre-oro);
+}
+
+/* ---- Tarjeta de plato (includes/tarjeta_plato.php): landing y menú del cliente ---- */
+.plato {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    overflow: hidden;
+    box-shadow: var(--sombra);
+    transition: border-color var(--medio) var(--curva), box-shadow var(--medio) var(--curva);
+}
+/* Al pasar el mouse el borde se enciende en oro y la sombra toma un brillo cálido */
+.plato:hover {
+    border-color: rgba(var(--oro-rgb), .6);
+    box-shadow: var(--sombra-alta), 0 16px 40px -22px rgba(var(--oro-rgb), .55);
+}
+
+.plato-foto {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--elevada); /* se ve mientras carga la foto */
+}
+.plato-foto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--curva); /* zoom lento: 1.2 s, más calmado que el resto de la interfaz */
+}
+.plato:hover .plato-foto img { transform: scale(1.06); }
+/* Degradado inferior: funde la foto con el cuerpo de la tarjeta */
+.plato-foto::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--superficie) 85%, transparent) 100%);
+    pointer-events: none;
+}
+/* Sin foto: degradado con la marca en el centro */
+.plato-sin-foto {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: rgba(var(--oro-rgb), .55);
+    background:
+        radial-gradient(circle at 50% 45%, rgba(var(--oro-rgb), .16), transparent 60%),
+        linear-gradient(160deg, var(--elevada), var(--fondo));
+}
+.plato-sin-foto .marca-icono { width: 56px; height: 56px; }
+
+.plato-cuerpo {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.1rem 1.35rem 1.35rem;
+}
+.plato-categoria {
+    color: var(--oro);
+    font-size: .75rem;
+    font-weight: 700;
+    font-variant: small-caps;
+    letter-spacing: .14em;
+    text-transform: lowercase; /* igual que .antetitulo: versalitas reales */
+}
+.plato-nombre {
+    margin: .3rem 0 .5rem;
+    font-size: 1.55rem;
+    line-height: 1.1;
+}
+/* Descripción recortada a 2 líneas: todas las tarjetas quedan del mismo alto */
+.plato-descripcion {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    min-height: calc(2 * 1.55em);
+    margin: 0;
+    color: var(--texto-2);
+    font-size: .9rem;
+    line-height: 1.55;
+}
+.plato-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: auto;
+    padding-top: 1.1rem;
+}
+.plato-precio { font-size: 1.85rem; line-height: 1; }
+.btn-anadir { --bs-btn-padding-x: 1rem; min-width: 6.5rem; }
+/* Confirmación tras pulsar "Añadir" (carrito.js): el botón pasa a contorno con un check */
+.btn-anadir.anadido {
+    --bs-btn-bg: transparent;
+    --bs-btn-hover-bg: transparent;
+    --bs-btn-color: var(--oro-claro);
+    --bs-btn-hover-color: var(--oro-claro);
+    box-shadow: none;
+}
+
+/* Número dentro de un chip ("Entradas 3") */
+.chip-numero {
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+    opacity: .7;
+}
+
+/* ---- Selector de cantidad: − 2 + ---- */
+.paso {
+    justify-self: start; /* dentro de la fila del carrito (grid) no se estira */
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: var(--fondo);
+}
+.paso-boton {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--texto);
+    transition: color var(--rapido), background-color var(--rapido);
+}
+.paso-boton:hover:not(:disabled) { color: var(--oro-claro); background: rgba(var(--oro-rgb), .1); }
+.paso-boton:disabled { color: var(--borde-fuerte); cursor: not-allowed; }
+.paso-numero {
+    min-width: 1.75rem;
+    text-align: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Carrito lateral (offcanvas de Bootstrap) ---- */
+.carrito {
+    --bs-offcanvas-width: 26rem;
+    --bs-offcanvas-bg: var(--superficie);
+    --bs-offcanvas-color: var(--texto);
+    --bs-offcanvas-border-color: var(--borde);
+    --bs-offcanvas-padding-x: 1.5rem;
+    box-shadow: var(--sombra-alta);
+}
+.carrito .offcanvas-header { border-bottom: 1px solid var(--borde); }
+.carrito .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
+.carrito-titulo { margin: 0; font-size: 1.9rem; }
+
+.carrito-lista { margin: 0; padding: 0; list-style: none; }
+/* Cada fila: nombre y quitar arriba; cantidad y subtotal abajo */
+.carrito-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .75rem 1rem;
+    padding-block: 1.1rem;
+    border-bottom: 1px solid var(--borde);
+}
+.carrito-item:first-child { padding-top: 0; }
+.carrito-item-info { display: flex; flex-direction: column; min-width: 0; }
+.carrito-item-nombre { font-family: var(--fuente-titulos); font-size: 1.3rem; font-weight: 600; line-height: 1.15; }
+.carrito-item-unitario { color: var(--texto-2); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.carrito-item-subtotal { font-size: 1.35rem; text-align: right; }
+.carrito-quitar {
+    align-self: start;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--texto-2);
+    transition: color var(--rapido), background-color var(--rapido);
+}
+.carrito-quitar:hover { color: var(--peligro); background: color-mix(in srgb, var(--peligro) 10%, transparent); }
+
+.carrito-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--texto-2);
+}
+.carrito-vacio .bi { font-size: 2.25rem; color: rgba(var(--oro-rgb), .6); margin-bottom: 1rem; }
+.carrito-vacio-titulo { margin-bottom: .35rem; font-family: var(--fuente-titulos); font-size: 1.5rem; color: var(--texto); }
+.carrito-vacio p { margin-bottom: .25rem; max-width: 30ch; }
+
+.carrito-pie {
+    padding: 1.25rem 1.5rem 1.5rem;
+    border-top: 1px solid var(--borde);
+    background: var(--elevada);
+}
+.carrito-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-weight: 600;
+}
+.carrito-total .precio { font-size: 2.1rem; line-height: 1; }
+.carrito-nota { margin: .5rem 0 1rem; color: var(--texto-2); font-size: .8125rem; }
+
+/* ---- Línea de progreso de un pedido (4 pasos) ---- */
+.progreso {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin: auto 0 0; /* auto arriba: en tarjetas de igual alto, las líneas quedan alineadas abajo */
+    padding: 0;
+    list-style: none;
+}
+.progreso-paso {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+}
+/* Tramo de línea que une cada punto con el anterior */
+.progreso-paso + .progreso-paso::before {
+    content: "";
+    position: absolute;
+    top: .6rem;
+    right: 50%;
+    width: 100%;
+    height: 2px;
+    background: var(--borde-fuerte);
+    z-index: 0;
+}
+.progreso-paso.hecho + .progreso-paso::before { background: var(--oro-apagado); }
+.progreso-punto {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    border: 2px solid var(--borde-fuerte);
+    background: var(--superficie);
+    color: var(--tinta-sobre-oro);
+    font-size: .85rem;
+}
+.progreso-paso.hecho .progreso-punto { background: var(--oro-apagado); border-color: var(--oro-apagado); }
+.progreso-paso.actual .progreso-punto {
+    background: var(--oro);
+    border-color: var(--oro);
+    box-shadow: 0 0 0 4px rgba(var(--oro-rgb), .18), 0 4px 12px -4px rgba(var(--oro-rgb), .6);
+}
+.progreso-texto { color: var(--texto-2); font-size: .75rem; font-weight: 600; line-height: 1.3; }
+.progreso-paso.actual .progreso-texto { color: var(--oro-claro); }
+.progreso-paso.hecho .progreso-texto { color: var(--texto); }
+
+/* ---- Estado vacío: marca de agua, título serif y una acción ---- */
+.estado-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(3rem, 8vw, 5rem) 1.5rem;
+    text-align: center;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio-lg);
+    background: radial-gradient(500px 240px at 50% 0%, rgba(var(--oro-rgb), .07), transparent 70%);
+}
+.estado-vacio-marca .marca-icono { width: 3.5rem; height: 3.5rem; color: rgba(var(--oro-rgb), .6); margin-bottom: 1.25rem; }
+.estado-vacio h2 { font-size: clamp(1.9rem, 2vw + 1rem, 2.5rem); margin-bottom: .75rem; }
+.estado-vacio p { color: var(--texto-2); max-width: 44ch; margin-bottom: 1.75rem; }
+
+/* ---- Enlace con flecha que avanza al pasar el mouse ---- */
+.enlace-flecha {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.enlace-flecha .bi { transition: transform var(--medio) var(--curva); }
+.enlace-flecha:hover .bi { transform: translateX(4px); }
+
+/* ---- Ganchos de animación (GSAP en app.js) ----
+   Siempre son visibles en CSS: si JavaScript no carga, el contenido se ve igual. */
+.anim-item,
+.revelar { opacity: 1; }
+
+/* ---- Pie del sitio ---- */
+.pie {
+    margin-top: 4rem;
+    border-top: 1px solid var(--borde);
+    padding-block: 2rem;
+}
+.pie-contenido { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+.marca-pie .marca-nombre { font-size: 1.35rem; }
+.pie-texto { color: var(--texto-2); font-size: .875rem; }
+
+.zona-flash { padding-top: 1.5rem; }
+
+
+/* ==========================================================================
+   5. LAYOUT POR ROL Y POR PÁGINA
+   El <body> recibe $clase_body: rol-admin, rol-chef, rol-camarero, rol-cliente,
+   pagina-acceso (login y registro) o pagina-403.
+   ========================================================================== */
+.rol-admin main,
+.rol-camarero main,
+.rol-cliente main { padding-block: 2.5rem 1rem; }
+
+/* El chef trabaja con el tablero a todo el ancho: menos margen arriba y halo apagado */
+.rol-chef main { padding-block: 1.5rem 1rem; }
+.rol-chef { background: var(--fondo); }
+
+/* ---- Acceso (login y registro): foto de ambiente | formulario ---- */
+.pagina-acceso { background: var(--fondo); }
+
+.acceso {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+.acceso-ambiente {
+    position: relative;
+    display: none; /* en móvil solo se muestra el formulario */
+    overflow: hidden;
+    isolation: isolate;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(2rem, 4vw, 3.5rem);
+}
+.acceso-foto {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.02);
+    transition: transform 1.2s var(--curva);
+}
+.acceso-ambiente:hover .acceso-foto { transform: scale(1.045); }
+/* Degradado: oscurece abajo para leer el lema y funde el borde derecho con el panel */
+.acceso-ambiente::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(180deg, rgba(var(--fondo-rgb),.55) 0%, rgba(var(--fondo-rgb),.05) 30%, rgba(var(--fondo-rgb),.25) 55%, rgba(var(--fondo-rgb),.92) 100%),
+        linear-gradient(90deg, transparent 70%, rgba(var(--fondo-rgb),.7) 100%);
+}
+.marca-grande .marca-icono { width: 28px; height: 28px; }
+.marca-grande .marca-nombre { font-size: 2rem; }
+
+.acceso-lema {
+    margin: 0;
+    max-width: 18ch;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2.4rem, 3.4vw + .5rem, 3.75rem);
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    color: var(--texto-realce);
+    text-shadow: 0 2px 24px rgba(0, 0, 0, .45); /* sombra negra a propósito: separa el lema de la foto */
+}
+.acceso-lema em { color: var(--oro-claro); font-style: italic; }
+
+.acceso-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(2rem, 5vw, 4rem) 1rem;
+    background:
+        radial-gradient(700px 420px at 100% 0%, rgba(var(--oro-rgb), .06), transparent 65%),
+        var(--fondo);
+}
+.acceso-caja { width: 100%; max-width: 27rem; }
+.acceso-marca-movil { margin-bottom: 2.5rem; }
+
+.acceso-titulo { font-size: clamp(2.3rem, 2.5vw + 1.4rem, 3rem); margin-bottom: .5rem; }
+.acceso-subtitulo { color: var(--texto-2); margin-bottom: 2rem; }
+.acceso-alterno { margin: 1.5rem 0 0; color: var(--texto-2); font-size: .9375rem; text-align: center; }
+.acceso-alterno a { font-weight: 600; }
+
+/* Cuentas de demostración: un panel plegable discreto bajo el formulario */
+.demo {
+    margin-top: 2rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    overflow: hidden;
+}
+.demo-boton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .9rem 1.1rem;
+    background: transparent;
+    border: 0;
+    color: var(--texto);
+    font-size: .9375rem;
+    font-weight: 600;
+    text-align: left;
+}
+.demo-boton .bi-person-badge { color: var(--oro); margin-right: .35rem; }
+.demo-boton:hover { background: rgba(236, 230, 216, .03); }
+.demo-boton:focus-visible { outline-offset: -3px; }
+.demo-flecha { transition: transform var(--medio) var(--curva); color: var(--texto-2); }
+.demo-boton[aria-expanded="true"] .demo-flecha { transform: rotate(180deg); }
+.tabla-demo { font-size: .875rem; }
+.tabla-demo > :not(caption) > * > * { padding-inline: 1.1rem; }
+.tabla-demo > caption { padding-inline: 1.1rem; padding-bottom: .9rem; }
+
+/* ---- Landing (index.php, body.pagina-inicio) ---- */
+.pagina-inicio { --alto-nav: 3.8rem; } /* alto de la barra: la portada se mete debajo de ella */
+
+.seccion { padding-block: clamp(4.5rem, 9vw, 7.5rem); }
+/* La última sección ya queda pegada al pie: sin esto se juntaban dos rellenos grandes y quedaba un hueco vacío */
+main > .seccion:last-child { padding-bottom: clamp(2rem, 4vw, 3.5rem); }
+.pagina-inicio .pie { margin-top: 0; } /* el relleno de la última sección ya hace de separación */
+
+/* Portada a pantalla completa: la foto queda detrás de la barra de vidrio */
+.hero {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100vh;
+    min-height: 100svh; /* svh: en móvil no queda tapada por la barra del navegador */
+    padding-block: calc(var(--alto-nav) + 3rem) clamp(3.5rem, 10vh, 7rem);
+    overflow: hidden;
+    isolation: isolate;
+}
+.pagina-inicio main > .hero:first-child { margin-top: calc(-1 * var(--alto-nav)); }
+.hero-foto {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 60% 50%;
+}
+/* Velo oscuro: más denso a la izquierda (donde va el texto) y fundido con el fondo abajo */
+.hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        linear-gradient(90deg, rgba(var(--fondo-rgb),.94) 0%, rgba(var(--fondo-rgb),.74) 42%, rgba(var(--fondo-rgb),.28) 100%),
+        linear-gradient(180deg, rgba(var(--fondo-rgb),.55) 0%, transparent 28%, transparent 62%, var(--fondo) 100%);
+}
+.hero-titulo {
+    margin: 0 0 1.5rem;
+    font-size: clamp(3rem, 6.2vw + 1rem, 6rem);
+    font-weight: 500;
+    line-height: .98;
+    letter-spacing: -0.02em;
+    color: var(--texto-realce);
+}
+/* Cada línea del título va dentro de una máscara: en la entrada sube desde abajo (app.js) */
+.hero-mascara {
+    display: block;
+    overflow: hidden;
+    padding-bottom: .08em; /* que la máscara no corte las colas de la cursiva */
+}
+.hero-linea { display: block; }
+.hero-titulo em { color: var(--oro-claro); font-style: italic; }
+.hero-texto {
+    max-width: 44ch;
+    margin: 0 0 2.25rem;
+    color: var(--texto-sobre-foto); /* un punto más claro que --texto-2 porque va sobre foto */
+    font-size: clamp(1.02rem, .3vw + .95rem, 1.15rem);
+}
+.hero-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
+.hero-boton-claro { --bs-btn-border-color: rgba(236, 230, 216, .45); }
+
+/* La carta */
+.carta-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 2.5rem;
+}
+.carta-vacia { color: var(--texto-2); }
+
+/* La casa: foto de la cocina y tres valores en lista */
+.casa { border-block: 1px solid var(--borde); background: linear-gradient(180deg, var(--superficie), var(--fondo)); }
+.casa-foto {
+    margin: 0;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border-radius: var(--radio-lg);
+    border: 1px solid var(--borde);
+    box-shadow: var(--sombra-alta);
+}
+.casa-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--curva); }
+.casa-foto:hover img { transform: scale(1.03); }
+.casa-lista { margin: 0; padding: 0; list-style: none; }
+.casa-lista li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.25rem;
+    padding-block: 1.5rem;
+    border-top: 1px solid var(--borde);
+}
+.casa-lista li:last-child { padding-bottom: 0; }
+.casa-icono {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgba(var(--oro-rgb), .4);
+    color: var(--oro);
+    font-size: 1.25rem;
+}
+.casa-lista h3 { margin: .15rem 0 .4rem; font-size: 1.6rem; }
+.casa-lista p { margin: 0; color: var(--texto-2); max-width: 52ch; }
+
+/* Cierre para visitantes: franja con la marca grande de fondo */
+.cierre {
+    position: relative;
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(2rem, 5vw, 4rem);
+    overflow: hidden;
+    border: 1px solid rgba(var(--oro-rgb), .3);
+    border-radius: var(--radio-lg);
+    background:
+        radial-gradient(600px 300px at 0% 0%, rgba(var(--oro-rgb), .14), transparent 70%),
+        var(--elevada);
+    box-shadow: var(--sombra-alta);
+}
+.cierre-marca {
+    position: absolute;
+    right: -3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+/* El icono toma su color de .marca-icono: aquí se apaga casi del todo, como una marca de agua */
+.cierre-marca .marca-icono { width: 22rem; height: 22rem; color: rgba(var(--oro-rgb), .07); }
+.cierre-texto, .cierre-acciones { position: relative; } /* por encima de la marca */
+.cierre h2 { margin: 0 0 .75rem; font-size: clamp(2rem, 2.6vw + 1rem, 3rem); }
+.cierre p { margin: 0; color: var(--texto-2); max-width: 48ch; }
+.cierre-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+/* ---- Cliente: cabecera compartida por la carta y Mis pedidos ---- */
+.menu-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    margin-bottom: 2rem;
+}
+/* Aviso "2 platos en camino": enlace a Mis pedidos con un punto que late */
+.menu-en-curso {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem 1.1rem;
+    border: 1px solid rgba(var(--oro-rgb), .4);
+    border-radius: 999px;
+    background: rgba(var(--oro-rgb), .07);
+    color: var(--oro-claro);
+    font-size: .9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color var(--rapido), border-color var(--rapido);
+}
+.menu-en-curso:hover { background: rgba(var(--oro-rgb), .14); border-color: var(--oro); color: var(--oro-claro); }
+.menu-en-curso-punto {
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background: var(--estado-pendiente);
+    animation: latido 2s ease-in-out infinite;
+}
+@keyframes latido {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--estado-pendiente) 55%, transparent); }
+    50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--estado-pendiente) 0%, transparent); }
+}
+
+/* Chips de filtro: fijos bajo la barra al bajar por la carta; en móvil se deslizan en horizontal */
+.filtros {
+    position: sticky;
+    top: var(--alto-barra, 4.1rem);
+    z-index: 10;
+    display: flex;
+    gap: .5rem;
+    margin-inline: -.75rem; /* igual al margen interno del .container: llega al borde sin desbordar */
+    padding: .85rem .75rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: var(--fondo);
+    /* La sombra sólida extiende el fondo a todo el ancho de la ventana; clip-path la recorta arriba y abajo */
+    box-shadow: 0 0 0 100vmax var(--fondo), 0 1px 0 100vmax var(--borde);
+    clip-path: inset(0 -100vmax -1px); /* -1px abajo: deja ver la línea divisoria */
+}
+.filtros::-webkit-scrollbar { display: none; }
+.filtros .chip { flex-shrink: 0; }
+
+.carta-seccion { padding-top: 2rem; scroll-margin-top: 8rem; }
+/* Título de sección con una línea fina dorada que llena el resto del ancho */
+.carta-seccion-titulo {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: clamp(1.9rem, 1.6vw + 1.2rem, 2.4rem);
+}
+.carta-seccion-titulo::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(var(--oro-rgb), .45), transparent);
+}
+
+/* Botón flotante del carrito, abajo a la derecha */
+.carrito-flotante {
+    position: fixed;
+    right: clamp(1rem, 3vw, 2rem);
+    bottom: clamp(1rem, 3vw, 2rem);
+    z-index: 1030;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    --bs-btn-padding-y: .8rem;
+    --bs-btn-padding-x: 1.35rem;
+    box-shadow: var(--sombra-alta), 0 10px 30px -10px rgba(var(--oro-rgb), .6);
+}
+.carrito-flotante .bi { font-size: 1.15rem; }
+.carrito-contador {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding-inline: .4rem;
+    border-radius: 999px;
+    background: var(--tinta-sobre-oro);
+    color: var(--oro-claro);
+    font-size: .8rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.carrito-contador[hidden] { display: none; }
+.pagina-menu .pie { padding-bottom: 6rem; } /* que el botón flotante no tape el pie */
+
+/* ---- Mis pedidos ---- */
+.bloque-pedidos { margin-bottom: 3.5rem; }
+.bloque-pedidos-titulo {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: 1.25rem;
+    font-size: clamp(1.8rem, 1.4vw + 1.2rem, 2.3rem);
+}
+.bloque-pedidos-numero {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding-inline: .5rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    color: var(--texto-2);
+    font-family: var(--fuente-texto);
+    font-size: .85rem;
+    font-weight: 700;
+}
+.bloque-pedidos-vacio {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem 1.25rem;
+    padding: 1.5rem;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio);
+    color: var(--texto-2);
+}
+
+.pedido-activo { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+.pedido-activo-cabecera {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 1rem;
+}
+.pedido-miniatura {
+    width: 4rem;
+    height: 4rem;
+    border-radius: var(--radio-sm);
+    border: 1px solid var(--borde);
+    object-fit: cover;
+}
+.pedido-miniatura-vacia { display: grid; place-items: center; background: var(--elevada); }
+.pedido-activo-datos { min-width: 0; }
+.pedido-activo-nombre { margin: 0 0 .3rem; font-size: 1.35rem; line-height: 1.15; }
+.pedido-activo-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 .6rem; color: var(--texto-2); font-size: .85rem; white-space: nowrap; }
+
+.tabla-historial > tfoot th,
+.tabla-historial > tfoot td {
+    padding-block: 1rem;
+    border-top: 1px solid var(--borde-fuerte);
+    border-bottom: 0;
+    font-weight: 700;
+}
+.tabla-historial > :not(caption) > * > *:first-child { padding-left: 1.5rem; }
+.tabla-historial > :not(caption) > * > *:last-child { padding-right: 1.5rem; }
+.tabla-total { font-size: 1.5rem; }
+
+/* ---- Chef: tablero de cocina (kanban de comandas) ---- */
+.cocina {
+    --margen-cocina: clamp(1rem, 3vw, 2.5rem);
+    max-width: 1680px;
+    margin-inline: auto;
+    padding-inline: var(--margen-cocina);
+}
+.cocina-barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem 2.5rem;
+    margin-bottom: 1.75rem;
+}
+.cocina-barra .titulo-seccion { flex: 1 1 18rem; }
+
+/* Resumen de la barra: número serif grande con el nombre de la columna debajo */
+.cocina-kpis { display: flex; gap: 2rem; margin: 0; }
+.cocina-kpi { display: flex; flex-direction: column-reverse; --tono: var(--estado-servido); }
+.cocina-kpi.pendiente  { --tono: var(--estado-pendiente); }
+.cocina-kpi.preparando { --tono: var(--estado-preparando); }
+.cocina-kpi.listo      { --tono: var(--estado-listo); }
+.cocina-kpi dt {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: var(--texto-2);
+    font-size: .75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.cocina-kpi dt::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: var(--tono); }
+.cocina-kpi dd {
+    margin: 0;
+    font-family: var(--fuente-titulos);
+    font-size: 2.25rem;
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* "Actualizado hace X s": punto verde que late mientras hay conexión, rojo sin ella */
+.cocina-sync {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    color: var(--texto-2);
+    font-size: .85rem;
+    font-variant-numeric: tabular-nums;
+}
+.sync-punto {
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    color: var(--estado-listo);
+    background: currentColor;
+    animation: latido-sync 2.4s ease-in-out infinite;
+}
+.sync-punto.sin-conexion { color: var(--peligro); animation: none; }
+.sync-texto { min-width: 11.5rem; }
+@keyframes latido-sync {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); }
+    50% { box-shadow: 0 0 0 5px color-mix(in srgb, currentColor 0%, transparent); }
+}
+
+/* Aviso flotante (errores y confirmaciones del tablero) */
+.cocina-aviso {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(1rem, 3vw, 2rem);
+    z-index: 1040;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    transform: translateX(-50%);
+    padding: .75rem 1.15rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio-sm);
+    background: var(--elevada);
+    box-shadow: var(--sombra-alta);
+    color: var(--texto);
+    font-size: .9rem;
+}
+.cocina-aviso.error { border-color: color-mix(in srgb, var(--peligro) 60%, transparent); color: var(--peligro); }
+.cocina-aviso:empty { display: none; } /* la región aria-live queda en el DOM; sin texto no se ve */
+
+/* Tablero: 3 columnas iguales en escritorio (en móvil se desliza, ver sección 7) */
+.tablero {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: stretch;
+}
+.columna {
+    --tono: var(--estado-servido);
+    display: flex;
+    flex-direction: column;
+    min-height: 62vh;
+    padding: 1rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-lg);
+    background: var(--superficie);
+}
+.columna.pendiente  { --tono: var(--estado-pendiente); }
+.columna.preparando { --tono: var(--estado-preparando); }
+.columna.listo      { --tono: var(--estado-listo); }
+.columna-cabecera {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin-bottom: 1rem;
+    padding: .25rem .35rem 1rem;
+    border-bottom: 1px solid var(--borde);
+}
+.columna-punto {
+    width: .6rem;
+    height: .6rem;
+    border-radius: 50%;
+    background: var(--tono);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--tono) 18%, transparent);
+}
+.columna-titulo { flex: 1; margin: 0; font-size: 1.5rem; }
+.columna-cuenta {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding-inline: .5rem;
+    border: 1px solid color-mix(in srgb, var(--tono) 45%, transparent);
+    border-radius: 999px;
+    color: var(--tono);
+    font-size: .85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.columna-lista { display: flex; flex-direction: column; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+.columna-vacia {
+    margin: auto 0;
+    padding: 2.5rem 1rem;
+    color: var(--texto-2);
+    font-family: var(--fuente-titulos);
+    font-size: 1.25rem;
+    font-style: italic;
+    text-align: center;
+    text-wrap: balance;
+}
+.columna-vacia[hidden] { display: none; }
+
+/* Ticket de comanda: papel un poco más claro con el borde inferior dentado.
+   La máscara deja el cuerpo entero y recorta abajo una tira de triángulos (los "dientes").
+   La sombra va en el <li> con drop-shadow, porque sigue la forma recortada (box-shadow no). */
+/* Las sombras son negro puro a propósito (como --sombra): una sombra no debe teñirse con la paleta */
+.ticket-envoltura { filter: drop-shadow(0 8px 12px rgba(0, 0, 0, .4)); }
+.ticket {
+    --diente: 7px;
+    padding: .95rem 1.05rem calc(.95rem + var(--diente));
+    border: 1px solid var(--borde-fuerte);
+    border-bottom: 0;
+    border-radius: var(--radio-sm) var(--radio-sm) 0 0;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--elevada) 90%, var(--texto)), var(--elevada) 4rem);
+    -webkit-mask:
+        linear-gradient(#000 0 0) top / 100% calc(100% - var(--diente)) no-repeat,
+        conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--diente) * 2) var(--diente) repeat-x;
+    mask:
+        linear-gradient(#000 0 0) top / 100% calc(100% - var(--diente)) no-repeat,
+        conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg) bottom / calc(var(--diente) * 2) var(--diente) repeat-x;
+}
+/* Urgente (15 min o más sin terminar): borde cálido y fondo apenas teñido */
+.ticket.urgente {
+    border-color: color-mix(in srgb, var(--estado-preparando) 70%, transparent);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--elevada) 86%, var(--estado-preparando)), var(--elevada) 5rem);
+}
+.ticket-cabecera {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--texto-2);
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .06em;
+}
+.ticket-numero { color: var(--texto); font-weight: 700; letter-spacing: .1em; }
+.ticket-plato { margin: .55rem 0 .6rem; font-size: 1.4rem; line-height: 1.15; overflow-wrap: anywhere; }
+.ticket-cantidad { margin-right: .15rem; color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+.ticket-datos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem 1rem;
+    margin: 0 0 .9rem;
+    padding: 0;
+    list-style: none;
+    color: var(--texto-2);
+    font-size: .82rem;
+}
+.ticket-datos li { display: inline-flex; align-items: center; gap: .35rem; min-width: 0; overflow-wrap: anywhere; }
+/* Línea punteada: separa los datos de la acción, como el corte de una comanda impresa */
+.ticket-pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem .75rem;
+    padding-top: .8rem;
+    border-top: 1px dashed var(--borde-fuerte);
+}
+.ticket-espera {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    color: var(--texto-2);
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+.ticket-espera.urgente {
+    padding: .2rem .6rem;
+    border: 1px solid color-mix(in srgb, var(--estado-preparando) 50%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--estado-preparando) 14%, transparent);
+    color: var(--estado-preparando);
+    font-weight: 700;
+}
+.ticket-esperando { display: inline-flex; align-items: center; gap: .4rem; color: var(--estado-listo); font-size: .8rem; font-weight: 600; }
+.ticket-accion[disabled] { cursor: progress; }
+
+/* ---- Camarero: panel de sala y nuevo pedido ----
+   Composición propia: cabecera con saludo, un resumen en una sola banda, "el pase" (franja dorada
+   que se desliza en horizontal) y debajo las listas en pestañas, densas como una libreta de comandas. */
+.sala-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem 2rem;
+    margin-bottom: 1.75rem;
+}
+.sala-cabecera .titulo-seccion { flex: 1 1 24rem; }
+.sala-nombre { color: var(--oro-claro); font-weight: 600; }
+.btn-nuevo-pedido { display: inline-flex; align-items: center; gap: .55rem; --bs-btn-padding-x: 1.7rem; }
+
+/* Resumen del turno: una banda con 3 celdas separadas por líneas finas (no 3 tarjetas sueltas) */
+.sala-resumen {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0 0 2rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+}
+/* Columna flexible: si una etiqueta ocupa más líneas, los números siguen alineados abajo */
+.sala-dato { display: flex; flex-direction: column; justify-content: space-between; padding: 1rem 1.35rem 1.1rem; }
+.sala-dato + .sala-dato { border-left: 1px solid var(--borde); }
+.sala-dato dt {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    color: var(--texto-2);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.sala-dato dt .bi { color: var(--oro); }
+.sala-dato dd {
+    margin: .35rem 0 0;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2rem, 2vw + 1.2rem, 2.6rem);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+.sala-dato.destacado dd { color: var(--oro-claro); }
+
+/* El pase: donde la cocina deja los platos terminados. Borde y tinte dorados en toda la franja */
+.pase {
+    margin-bottom: 2.75rem;
+    padding: 1.25rem 1.25rem .5rem;
+    border: 1px solid rgba(var(--oro-rgb), .38);
+    border-radius: var(--radio-lg);
+    background:
+        linear-gradient(180deg, rgba(var(--oro-rgb), .11), rgba(var(--oro-rgb), .02) 70%),
+        var(--superficie);
+    box-shadow: var(--sombra);
+}
+.pase-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .75rem;
+    margin-bottom: 1rem;
+}
+.pase-icono {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background: var(--oro);
+    color: var(--tinta-sobre-oro);
+    font-size: 1.05rem;
+}
+.pase-titulo { margin: 0; font-size: clamp(1.5rem, 1vw + 1.2rem, 1.85rem); }
+.pase-cuenta {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    padding-inline: .5rem;
+    border: 1px solid rgba(var(--oro-rgb), .55);
+    border-radius: 999px;
+    color: var(--oro-claro);
+    font-size: .85rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.pase-nota { margin: 0 0 0 auto; color: var(--texto-2); font-size: .8125rem; }
+
+/* Carril horizontal con "enganche" (scroll-snap); el margen negativo lo lleva hasta el borde de la franja */
+.pase-carril {
+    display: flex;
+    gap: 1rem;
+    margin: 0 -1.25rem;
+    padding: .25rem 1.25rem 1rem;
+    list-style: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1.25rem;
+    scrollbar-color: rgba(var(--oro-rgb), .45) transparent;
+}
+.pase-tarjeta {
+    position: relative; /* contiene al .visually-hidden (absolute): si no, se sale del carril y crea scroll horizontal */
+    flex: 0 0 min(17.5rem, 84%);
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding: 1rem 1.1rem 1.1rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: var(--radio);
+    background: var(--elevada);
+    box-shadow: 0 8px 18px -10px rgba(0, 0, 0, .7);
+}
+/* Los que ya son de este camarero: borde dorado completo */
+.pase-tarjeta.mia { border-color: rgba(var(--oro-rgb), .6); }
+.pase-tarjeta-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+}
+.pase-numero { color: var(--texto-2); font-weight: 700; letter-spacing: .1em; }
+.pase-espera { display: inline-flex; align-items: center; gap: .35rem; color: var(--texto-2); white-space: nowrap; }
+/* Un plato que lleva rato en el pase se enfría: se avisa en tono cobre */
+.pase-espera.demora {
+    padding: .15rem .55rem;
+    border: 1px solid color-mix(in srgb, var(--estado-preparando) 50%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--estado-preparando) 14%, transparent);
+    color: var(--estado-preparando);
+    font-weight: 700;
+}
+.pase-plato { margin: 0; font-size: 1.4rem; line-height: 1.15; overflow-wrap: anywhere; }
+.pase-cantidad { color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; white-space: nowrap; }
+.pase-datos { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: 0 0 .35rem; font-size: .85rem; }
+.pase-datos dt { color: var(--texto-2); font-size: .72rem; font-weight: 600; }
+.pase-datos dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.pase-tuyo { color: var(--oro-claro); }
+.pase-libre { color: var(--texto-2); font-style: italic; font-weight: 500 !important; }
+.pase-form { margin-top: auto; }
+.pase-vacio {
+    margin: 0 0 .75rem;
+    padding: 1.5rem 0 .75rem;
+    color: var(--texto-2);
+    font-family: var(--fuente-titulos);
+    font-size: 1.3rem;
+    font-style: italic;
+}
+
+/* Pestañas (nav-pills de Bootstrap con los colores de Ébano) */
+.sala-pestanas {
+    --bs-nav-link-color: var(--texto-2);
+    --bs-nav-link-hover-color: var(--texto);
+    --bs-nav-link-font-weight: 600;
+    --bs-nav-pills-border-radius: 999px;
+    --bs-nav-pills-link-active-color: var(--oro-claro);
+    --bs-nav-pills-link-active-bg: rgba(var(--oro-rgb), .12);
+    gap: .5rem;
+    margin-bottom: 1.25rem;
+}
+.sala-pestanas .nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    border: 1px solid var(--borde-fuerte);
+    transition: color var(--rapido), background-color var(--rapido), border-color var(--rapido);
+}
+.sala-pestanas .nav-link:hover { border-color: rgba(var(--oro-rgb), .55); }
+.sala-pestanas .nav-link.active { border-color: rgba(var(--oro-rgb), .55); }
+.pestana-numero {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding-inline: .4rem;
+    border-radius: 999px;
+    background: var(--elevada);
+    color: var(--texto);
+    font-size: .75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.sala-pestanas .nav-link.active .pestana-numero { background: var(--oro); color: var(--tinta-sobre-oro); }
+.tab-pane:focus-visible { outline-offset: 6px; }
+
+/* Lista de pedidos: filas en una sola superficie, separadas por líneas */
+.lista-sala {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+}
+.fila-sala {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem 1.5rem;
+    padding: 1rem 1.35rem;
+    border-bottom: 1px solid var(--borde);
+    transition: background-color var(--rapido);
+}
+.fila-sala:last-child { border-bottom: 0; }
+.fila-sala:hover { background: rgba(var(--oro-rgb), .035); }
+.fila-numero {
+    flex: 0 0 4rem;
+    color: var(--texto-2);
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    font-variant-numeric: tabular-nums;
+}
+.fila-cuerpo { flex: 1 1 14rem; min-width: 0; }
+.fila-plato { margin: 0 0 .2rem; font-size: 1.3rem; line-height: 1.2; overflow-wrap: anywhere; }
+.fila-cantidad { color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; }
+.fila-meta { display: flex; flex-wrap: wrap; gap: .2rem 1rem; margin: 0; color: var(--texto-2); font-size: .8125rem; }
+.fila-meta .bi { margin-right: .2rem; }
+.fila-estado { display: flex; flex-direction: column; align-items: flex-end; gap: .5rem; }
+.fila-sala.entregada .fila-plato { color: var(--texto-2); }
+.fila-sala.entregada .fila-cantidad { color: inherit; }
+
+/* Progreso compacto: 4 tramos; los pasados en oro apagado y el actual en oro */
+.progreso-mini { display: flex; gap: 3px; }
+.progreso-mini span { width: 1.15rem; height: 4px; border-radius: 2px; background: var(--borde-fuerte); }
+.progreso-mini span.hecho { background: var(--oro-apagado); }
+.progreso-mini span.actual { background: var(--oro); }
+
+/* Lista vacía: icono dorado + frase, sin ocupar media pantalla */
+.sala-vacio {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio);
+    color: var(--texto-2);
+}
+.sala-vacio > .bi { color: var(--oro); font-size: 1.6rem; line-height: 1; }
+.sala-vacio p { margin: 0; }
+.sala-vacio .sala-vacio-titulo { margin-bottom: .25rem; color: var(--texto); font-family: var(--fuente-titulos); font-size: 1.35rem; font-weight: 600; }
+
+/* Nuevo pedido: dos pasos con su número en un círculo dorado */
+.paso-sala {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0 1.25rem;
+    margin-bottom: 2.5rem;
+}
+.paso-sala-numero {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid rgba(var(--oro-rgb), .6);
+    border-radius: 50%;
+    color: var(--oro-claro);
+    font-family: var(--fuente-titulos);
+    font-size: 1.35rem;
+    font-weight: 600;
+    font-variant-numeric: lining-nums; /* sin esto, el "1" de Cormorant parece una "I" */
+    line-height: 1;
+}
+.paso-sala-cuerpo h2 { margin: .2rem 0 1rem; font-size: clamp(1.6rem, 1.2vw + 1.2rem, 2rem); }
+.paso-sala .form-select { max-width: 32rem; }
+.pagina-nuevo-pedido .pie { padding-bottom: 6rem; } /* que el botón flotante no tape el pie */
+
+/* "Para: ana" en el pie del carrito; en tono de peligro mientras falta elegir el cliente */
+.carrito-para {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    margin: 0 0 1rem;
+    padding: .6rem .85rem;
+    border: 1px solid rgba(var(--oro-rgb), .4);
+    border-radius: var(--radio-sm);
+    background: rgba(var(--oro-rgb), .07);
+    color: var(--oro-claro);
+    font-size: .875rem;
+    font-weight: 600;
+}
+.carrito-para.falta {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--peligro) 55%, transparent);
+    background: transparent;
+    color: var(--peligro);
+}
+/* ==========================================================================
+   ADMINISTRADOR: sala de control (admin/dashboard.php) y gestión
+   (admin/platos.php, usuarios.php, pedidos.php)
+   Idea: una consola sobria. Fondo con una retícula muy tenue, una franja de indicadores
+   dividida por líneas finas y paneles asimétricos (barras de estado | lo más pedido).
+   ========================================================================== */
+
+/* Retícula de fondo: dos degradados repetidos de 1px trazan la cuadrícula de la "sala de control" */
+.pagina-control {
+    background:
+        repeating-linear-gradient(0deg, color-mix(in srgb, var(--borde) 35%, transparent) 0 1px, transparent 1px 48px),
+        repeating-linear-gradient(90deg, color-mix(in srgb, var(--borde) 35%, transparent) 0 1px, transparent 1px 48px),
+        var(--fondo);
+}
+
+/* ---- Cabecera: título a la izquierda, fecha a la derecha ---- */
+.control-cabecera,
+.gestion-cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: 2rem;
+}
+.control-titulo,
+.gestion-titulo { margin: 0; font-size: clamp(2.25rem, 3.5vw + 1rem, 3.5rem); }
+.control-saludo,
+.gestion-resumen { margin: .5rem 0 0; color: var(--texto-2); max-width: 62ch; }
+.control-saludo strong { color: var(--texto); }
+.control-fecha {
+    margin: 0;
+    padding: .45rem .9rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: var(--superficie);
+    color: var(--texto-2);
+    font-size: .875rem;
+    font-weight: 600;
+}
+.control-fecha::first-letter { text-transform: uppercase; }
+.control-fecha .bi { color: var(--oro); margin-right: .25rem; }
+
+/* ---- Franja de indicadores: una superficie con columnas separadas por líneas ---- */
+.control-indicadores {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr));
+    margin: 0 0 1.5rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+.indicador { padding: 1.35rem 1.5rem; border-left: 1px solid var(--borde); }
+.indicador:first-child { border-left: 0; }
+.indicador dt { color: var(--texto-2); font-size: .8125rem; font-weight: 600; }
+.indicador dt .bi { color: var(--oro); margin-right: .3rem; }
+.indicador dd {
+    margin: .35rem 0 0;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(2.25rem, 2vw + 1.25rem, 3rem);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+}
+/* El indicador principal (ingresos) es más ancho y lleva un fondo dorado muy tenue */
+.indicador-principal {
+    border-radius: var(--radio) 0 0 var(--radio);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--oro) 10%, transparent), transparent 70%);
+}
+.indicador-principal dd { font-size: clamp(2.5rem, 3vw + 1.25rem, 3.6rem); }
+.indicador .indicador-nota { margin: .5rem 0 0; color: var(--texto-2); font-family: var(--fuente-texto); font-size: .75rem; font-weight: 400; line-height: 1.4; }
+
+/* ---- Rejilla asimétrica: barras (ancho) | lo más pedido (angosto) ---- */
+.control-rejilla {
+    display: grid;
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.control-panel {
+    padding: 1.5rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+.control-panel-cabecera {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: .9rem;
+    border-bottom: 1px solid var(--borde);
+}
+.control-panel-cabecera h2 { margin: 0; font-size: 1.75rem; }
+.control-total { color: var(--texto-2); font-size: .8125rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.control-vacio { margin: 0; padding-block: 1rem; color: var(--texto-2); font-family: var(--fuente-titulos); font-size: 1.25rem; font-style: italic; }
+
+/* Barras de estado: etiqueta | pista con relleno | número. El ancho del relleno lo pone PHP. */
+/* El panel de barras se estira al alto del panel vecino y reparte las 4 barras en ese espacio */
+.control-estados { display: flex; flex-direction: column; }
+.barras { display: grid; flex: 1; align-content: space-evenly; gap: 1.1rem; margin: 0; padding: 0; list-style: none; }
+.barra {
+    --tono: var(--estado-servido);
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr) 2.5rem;
+    align-items: center;
+    gap: 1rem;
+}
+.barra.pendiente  { --tono: var(--estado-pendiente); }
+.barra.preparando { --tono: var(--estado-preparando); }
+.barra.listo      { --tono: var(--estado-listo); }
+.barra.servido    { --tono: var(--estado-servido); }
+.barra-etiqueta { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; font-weight: 600; }
+.barra-etiqueta::before { content: ""; width: .55rem; height: .55rem; border-radius: 50%; background: var(--tono); }
+.barra-pista {
+    height: .75rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tono) 10%, var(--elevada));
+    overflow: hidden;
+}
+.barra-relleno {
+    display: block;
+    height: 100%;
+    min-width: 2px; /* un estado en 0 deja una marca visible en vez de desaparecer */
+    border-radius: inherit;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--tono) 55%, var(--superficie)), var(--tono));
+    transform-origin: left center;
+    animation: barra-crece .6s var(--curva) both;
+}
+@keyframes barra-crece { from { transform: scaleX(0); } }
+.barra-numero {
+    text-align: right;
+    font-family: var(--fuente-titulos);
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--tono);
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Lo más pedido: puesto, miniatura, nombre y unidades */
+.top-lista { margin: 0; padding: 0; list-style: none; }
+.top-fila {
+    display: grid;
+    grid-template-columns: 1.5rem 3rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .85rem;
+    padding-block: .6rem;
+    border-bottom: 1px solid var(--borde);
+}
+.top-fila:last-child { border-bottom: 0; padding-bottom: 0; }
+.top-fila:first-child { padding-top: 0; }
+.top-puesto { color: var(--texto-2); font-family: var(--fuente-titulos); font-size: 1.25rem; font-variant-numeric: lining-nums; }
+.top-fila:first-child .top-puesto { color: var(--oro); }
+.top-foto { width: 3rem; height: 3rem; border-radius: var(--radio-sm); object-fit: cover; background: var(--elevada); }
+.top-sin-foto { display: grid; place-items: center; color: color-mix(in srgb, var(--oro) 60%, transparent); }
+.top-nombre { font-weight: 600; overflow-wrap: anywhere; line-height: 1.3; }
+.top-unidades { font-family: var(--fuente-titulos); font-size: 1.4rem; font-weight: 600; color: var(--oro-claro); font-variant-numeric: lining-nums tabular-nums; }
+
+/* Accesos a la gestión: una fila de enlaces anchos con flecha, no tarjetas apiladas */
+.control-accesos {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    overflow: hidden;
+}
+.acceso-gestion {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    border-left: 1px solid var(--borde);
+    color: var(--texto);
+    text-decoration: none;
+    transition: background-color var(--rapido), color var(--rapido);
+}
+.acceso-gestion:first-child { border-left: 0; }
+.acceso-gestion > .bi:first-child { color: var(--oro); font-size: 1.35rem; }
+.acceso-gestion-texto { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.acceso-gestion-titulo { font-family: var(--fuente-titulos); font-size: 1.4rem; font-weight: 600; line-height: 1.1; }
+.acceso-gestion-detalle { color: var(--texto-2); font-size: .8125rem; }
+.acceso-gestion-flecha { color: var(--texto-2); transition: transform var(--rapido) var(--curva), color var(--rapido); }
+.acceso-gestion:hover { background: color-mix(in srgb, var(--oro) 6%, transparent); color: var(--texto); }
+.acceso-gestion:hover .acceso-gestion-flecha { color: var(--oro-claro); transform: translateX(4px); }
+.acceso-gestion:focus-visible { outline-offset: -3px; }
+
+/* ---- Páginas de gestión: tabla en una superficie ---- */
+.gestion-tabla {
+    padding: .5rem 1.25rem;
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    background: var(--superficie);
+    box-shadow: var(--sombra);
+}
+/* position: relative contiene a los .visually-hidden (absolute) de las celdas; si no, crean scroll horizontal en la página */
+.gestion-tabla .table-responsive { position: relative; }
+.gestion-cuenta { margin: 0 0 .75rem; color: var(--texto-2); font-size: .875rem; }
+.tabla-gestion { min-width: 40rem; }
+.tabla-pedidos { min-width: 56rem; }
+.tabla-gestion .text-end { text-align: right; }
+
+.acciones-fila { display: flex; justify-content: flex-end; align-items: center; gap: .5rem; }
+
+/* Celda del plato: miniatura + nombre + descripción en una línea recortada */
+.celda-plato { display: flex; align-items: center; gap: .9rem; min-width: 16rem; }
+.miniatura {
+    flex: 0 0 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radio-sm);
+    object-fit: cover;
+    background: var(--elevada);
+}
+.miniatura-vacia { display: grid; place-items: center; color: color-mix(in srgb, var(--oro) 60%, transparent); }
+.celda-plato-texto { display: flex; flex-direction: column; min-width: 0; }
+.celda-plato-nombre { font-weight: 600; overflow-wrap: anywhere; }
+.celda-plato-desc {
+    max-width: 34ch;
+    overflow: hidden;
+    color: var(--texto-2);
+    font-size: .8125rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.celda-precio { font-size: 1.25rem; }
+.fila-oculta .miniatura { opacity: .45; filter: grayscale(.8); }
+.fila-oculta .celda-plato-nombre { color: var(--texto-2); }
+
+/* Interruptor "en carta": un botón de formulario con forma de switch */
+.interruptor {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .25rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--texto-2);
+    font-size: .8125rem;
+    font-weight: 600;
+}
+.interruptor-pista {
+    position: relative;
+    width: 2.5rem;
+    height: 1.4rem;
+    border: 1px solid var(--borde-fuerte);
+    border-radius: 999px;
+    background: var(--fondo);
+    transition: background-color var(--rapido), border-color var(--rapido);
+}
+.interruptor-pista::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: calc(1.4rem - 6px);
+    height: calc(1.4rem - 6px);
+    border-radius: 50%;
+    background: var(--texto-2);
+    transition: transform var(--rapido) var(--curva), background-color var(--rapido);
+}
+.interruptor[aria-checked="true"] { color: var(--oro-claro); }
+.interruptor[aria-checked="true"] .interruptor-pista { background: color-mix(in srgb, var(--oro) 25%, var(--fondo)); border-color: var(--oro); }
+.interruptor[aria-checked="true"] .interruptor-pista::after { transform: translateX(1.1rem); background: var(--oro); }
+.interruptor:hover .interruptor-pista { border-color: var(--oro); }
+
+/* Botones de peligro: contorno en la tabla, sólido en el modal de confirmación */
+.btn-contorno-peligro {
+    --bs-btn-color: var(--peligro);
+    --bs-btn-bg: transparent;
+    --bs-btn-border-color: color-mix(in srgb, var(--peligro) 45%, transparent);
+    --bs-btn-hover-color: var(--peligro);
+    --bs-btn-hover-bg: color-mix(in srgb, var(--peligro) 12%, transparent);
+    --bs-btn-hover-border-color: var(--peligro);
+    --bs-btn-active-color: var(--peligro);
+    --bs-btn-active-bg: color-mix(in srgb, var(--peligro) 18%, transparent);
+    --bs-btn-active-border-color: var(--peligro);
+    --bs-btn-disabled-color: var(--texto-2);
+    --bs-btn-disabled-border-color: var(--borde);
+}
+/* La tinta oscura de --tinta-sobre-oro también se usa aquí: es el texto oscuro que contrasta con cualquier botón de color claro */
+.btn-peligro {
+    --bs-btn-color: var(--tinta-sobre-oro);
+    --bs-btn-bg: var(--peligro);
+    --bs-btn-border-color: var(--peligro);
+    --bs-btn-hover-color: var(--tinta-sobre-oro);
+    --bs-btn-hover-bg: color-mix(in srgb, var(--peligro) 85%, var(--texto));
+    --bs-btn-hover-border-color: color-mix(in srgb, var(--peligro) 85%, var(--texto));
+    --bs-btn-active-color: var(--tinta-sobre-oro);
+    --bs-btn-active-bg: var(--peligro);
+    --bs-btn-active-border-color: var(--peligro);
+}
+
+/* Usuarios: avatar con iniciales, teñido según el rol */
+.celda-usuario { display: flex; align-items: center; gap: .75rem; min-width: 15rem; }
+.celda-usuario .celda-plato-nombre { overflow-wrap: break-word; }
+.avatar {
+    --tono: var(--estado-servido);
+    display: grid;
+    flex: 0 0 2.5rem;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid color-mix(in srgb, var(--tono) 50%, transparent);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--tono) 14%, var(--superficie));
+    color: var(--tono);
+    font-size: .8125rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.avatar.rol-administrator { --tono: var(--oro-claro); }
+.avatar.rol-chef { --tono: var(--estado-preparando); }
+.avatar.rol-waiter { --tono: var(--estado-listo); }
+.marca-tu {
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--oro);
+    color: var(--tinta-sobre-oro);
+    font-size: .6875rem;
+    font-weight: 700;
+}
+.celda-email { color: var(--texto-2); white-space: nowrap; }
+
+/* Pedidos: filtros, búsqueda y selector de estado en línea */
+.filtros-pedidos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.filtros-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+.filtros-chips .chip { text-decoration: none; }
+.punto-estado { width: .5rem; height: .5rem; border-radius: 50%; background: var(--estado-servido); }
+.punto-estado.pendiente { background: var(--estado-pendiente); }
+.punto-estado.preparando { background: var(--estado-preparando); }
+.punto-estado.listo { background: var(--estado-listo); }
+.buscador { position: relative; display: flex; align-items: center; gap: .5rem; flex: 0 1 24rem; }
+.buscador > .bi { position: absolute; left: .9rem; color: var(--texto-2); pointer-events: none; }
+.buscador .form-control { padding-left: 2.4rem; }
+.tabla-pedidos > :not(caption) > * > * { padding-inline: .45rem; }
+.celda-pedido { white-space: nowrap; }
+.celda-numero { font-size: .875rem; font-weight: 700; letter-spacing: .06em; }
+.celda-pedido time { display: block; color: var(--texto-2); font-size: .75rem; }
+.tabla-pedidos .celda-plato-pedido { min-width: 11rem; }
+.cambiar-estado { display: flex; align-items: center; gap: .4rem; margin: 0; }
+.cambiar-estado .form-select { width: 8.75rem; padding-block: .35rem; font-size: .8125rem; }
+.cambiar-estado .btn { --bs-btn-padding-x: .75rem; }
+
+/* ---- Modales de Ébano (crear/editar y confirmar) ---- */
+.modal-ebano {
+    --bs-modal-bg: var(--superficie);
+    --bs-modal-color: var(--texto);
+    --bs-modal-border-color: var(--borde-fuerte);
+    --bs-modal-border-radius: var(--radio-lg);
+    --bs-modal-header-border-color: var(--borde);
+    --bs-modal-footer-border-color: var(--borde);
+    --bs-modal-padding: 1.5rem;
+    --bs-modal-header-padding: 1.25rem 1.5rem;
+}
+.modal-ebano .modal-content { box-shadow: var(--sombra-alta); }
+.modal-ebano .modal-title { font-size: 1.9rem; }
+.modal-ebano .btn-close { filter: invert(1) grayscale(1) brightness(1.6); opacity: .6; }
+.modal-backdrop { --bs-backdrop-bg: var(--fondo); --bs-backdrop-opacity: .75; }
+
+/* Formulario del plato: campos | foto con vista previa */
+.form-plato { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.5rem; }
+.vista-previa {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    margin-top: .75rem;
+    border: 1px dashed var(--borde-fuerte);
+    border-radius: var(--radio);
+    background: var(--fondo);
+    overflow: hidden;
+}
+.vista-previa img { width: 100%; height: 100%; object-fit: cover; }
+.vista-previa-vacia { display: inline-flex; flex-direction: column; align-items: center; gap: .5rem; color: var(--texto-2); font-size: .8125rem; }
+.vista-previa-vacia .marca-icono { width: 36px; height: 36px; }
+.vista-previa [hidden] { display: none; }
+
+/* ---- Página 403 ---- */
+.error-403 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 62vh;
+    padding-block: 4rem;
+}
+.error-codigo {
+    margin: 0;
+    font-family: var(--fuente-titulos);
+    font-size: clamp(6rem, 18vw, 11rem);
+    font-weight: 500;
+    line-height: .9;
+    letter-spacing: -0.03em;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--oro); /* número solo con contorno dorado, como grabado */
+}
+.error-titulo { font-size: clamp(2rem, 3vw + 1rem, 3rem); margin: 1.25rem 0 .75rem; }
+.error-texto { color: var(--texto-2); max-width: 46ch; margin-bottom: 2rem; }
+
+
+/* ==========================================================================
+   6. UTILIDADES
+   ========================================================================== */
+.texto-2 { color: var(--texto-2) !important; }
+.numeros { font-variant-numeric: tabular-nums; }
+.precio {
+    font-family: var(--fuente-titulos);
+    font-weight: 600;
+    color: var(--oro-claro);
+    font-variant-numeric: lining-nums;
+}
+
+
+/* ==========================================================================
+   7. RESPONSIVE Y MOVIMIENTO REDUCIDO
+   ========================================================================== */
+
+/* Escritorio: el acceso pasa a dos columnas y aparece la foto */
+@media (min-width: 992px) {
+    .acceso { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+    .acceso-ambiente { display: flex; }
+    .acceso-marca-movil { display: none; }
+    .acceso-panel { padding-inline: 3rem; }
+    .cierre { grid-template-columns: 1fr auto; }
+}
+
+/* Móvil y tableta: menú desplegado en bloque, usuario abajo */
+@media (max-width: 991.98px) {
+    /* Tablero de cocina: las columnas se deslizan en horizontal y se "enganchan" (scroll-snap).
+       El margen negativo lleva el carril hasta el borde de la pantalla sin desbordar la página. */
+    .tablero {
+        display: flex;
+        gap: 1rem;
+        margin-inline: calc(-1 * var(--margen-cocina));
+        padding: 0 var(--margen-cocina) .75rem;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scroll-padding-inline: var(--margen-cocina);
+    }
+    .columna { flex: 0 0 min(86%, 24rem); min-height: 55vh; scroll-snap-align: start; }
+
+    .navbar-ebano .navbar-collapse { padding-top: .75rem; }
+    .navbar-ebano .nav-link { padding-block: .7rem !important; }
+    .nav-usuario {
+        flex-wrap: wrap;
+        margin-top: .75rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--borde);
+    }
+
+    /* Sala de control: indicadores en 2 × 2 (ingresos a lo ancho) y paneles en una columna */
+    .control-indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .indicador-principal { grid-column: 1 / -1; border-radius: var(--radio) var(--radio) 0 0; border-bottom: 1px solid var(--borde); }
+    .indicador:nth-child(2) { border-left: 0; }
+    .control-rejilla { grid-template-columns: minmax(0, 1fr); }
+    .control-accesos { grid-template-columns: minmax(0, 1fr); }
+    .acceso-gestion { border-left: 0; border-top: 1px solid var(--borde); }
+    .acceso-gestion:first-child { border-top: 0; }
+    .form-plato { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 575.98px) {
+    /* Administrador en el teléfono */
+    .indicador { padding: 1rem .9rem; }
+    .indicador dt { font-size: .72rem; line-height: 1.25; }
+    .indicador dt .bi { display: none; }
+    .indicador dd { font-size: 2rem; }
+    .control-panel { padding: 1.25rem 1rem; }
+    .barra { grid-template-columns: minmax(0, 1fr) 2.5rem; row-gap: .4rem; }
+    .barra-pista { grid-column: 1 / -1; grid-row: 2; }
+    .gestion-cabecera .btn { width: 100%; justify-content: center; }
+    .gestion-tabla { padding-inline: .75rem; }
+    .buscador { flex-basis: 100%; }
+    .card-ebano { padding: 1.25rem; }
+    .nav-usuario .btn { flex: 1 1 auto; }
+    .tabla-demo > :not(caption) > * > * { padding-inline: .75rem; }
+    /* En el teléfono los botones de la portada y del cierre ocupan todo el ancho */
+    .hero-acciones .btn,
+    .cierre-acciones .btn { flex: 1 1 100%; }
+    .cierre-marca { right: -6rem; }
+    /* Botón flotante del carrito: solo icono y contador, para no tapar las tarjetas */
+    .carrito-flotante-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .carrito-flotante { --bs-btn-padding-x: 1.1rem; }
+    .progreso-texto { font-size: .6875rem; }
+    .cocina-kpis { width: 100%; justify-content: space-between; gap: 1rem; }
+    .cocina-kpi dd { font-size: 1.9rem; }
+    /* Panel de sala en el teléfono */
+    .btn-nuevo-pedido { width: 100%; justify-content: center; }
+    .sala-dato { padding: .85rem .8rem .9rem; }
+    .sala-dato dt { font-size: .72rem; line-height: 1.25; }
+    .sala-dato dt .bi { display: none; } /* en 3 columnas estrechas el texto necesita todo el ancho */
+    .pase { padding-inline: 1rem; }
+    .pase-carril { margin-inline: -1rem; padding-inline: 1rem; scroll-padding-inline: 1rem; }
+    .pase-nota { flex-basis: 100%; margin-left: 0; }
+    .fila-sala { padding-inline: 1rem; }
+    .fila-numero { flex-basis: 100%; }
+    .fila-estado { flex-direction: row; align-items: center; }
+    .paso-sala { grid-template-columns: minmax(0, 1fr); }
+    .paso-sala-numero { width: 2rem; height: 2rem; font-size: 1.1rem; margin-bottom: .5rem; }
+}
+
+/* Quien pide menos movimiento al sistema operativo no ve transiciones ni zoom */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .acceso-ambiente:hover .acceso-foto,
+    a.card-ebano:hover,
+    .card-ebano.interactiva:hover,
+    .btn-oro:hover,
+    .plato:hover .plato-foto img,
+    .casa-foto:hover img,
+    .enlace-flecha:hover .bi { transform: none; }
+    .menu-en-curso-punto,
+    .sync-punto { animation: none; }
+}
