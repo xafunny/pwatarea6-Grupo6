@@ -4,6 +4,8 @@ Fecha: 2026-11-23 · Entorno: http://localhost/pwatarea6/ (XAMPP, PHP 8.5 local,
 
 **Resultado: 53 pasos PASS, 0 FALLA.** No se encontraron errores de la aplicación.
 
+**Re-ejecución final (después de las últimas correcciones): 51 pasos PASS, 0 FALLA.** Son 2 menos porque las filas 21 y 40 (OBSOLETO) ya no se comprueban: el chef ahora puede ver la carta y el administrador puede crear pedidos. Las capturas `e2e-*.png` son de esta última ejecución. La tabla de abajo corresponde a la primera ejecución; en la re-ejecución los ids de los pedidos cambian (#30 y #31).
+
 ## Cómo ejecutarlo
 
 1. Apache y MySQL encendidos, con `database.sql` importado (solo datos de ejemplo).
