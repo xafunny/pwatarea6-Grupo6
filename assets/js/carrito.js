@@ -1,7 +1,8 @@
 /**
  * carrito.js · Carrito de pedidos de Ébano (menú del cliente y "nuevo pedido" del camarero).
  * Se carga después de app.js. Funciona en cualquier página que tenga:
- *   - un formulario raíz con data-carrito="<clave>" (la clave de localStorage, ej: 'ebano_carrito_cliente');
+ *   - un formulario raíz con data-carrito="<clave>" (la clave de localStorage, ej: 'ebano_carrito_cliente_4':
+ *     lleva el id del usuario para que dos cuentas en el mismo navegador no compartan carrito);
  *   - botones .btn-anadir con data-id, data-nombre y data-precio (includes/tarjeta_plato.php);
  *   - dentro del formulario: [data-carrito-lista], [data-carrito-vacio], [data-carrito-total],
  *     [data-carrito-campos] y el botón [data-carrito-confirmar];
@@ -12,7 +13,8 @@
  *     En el menú del cliente esos elementos no existen y el carrito funciona igual que siempre.
  * El estado es un objeto { idPlato: { nombre, precio, cantidad } } guardado en localStorage.
  * El precio solo se usa para MOSTRAR el total: el servidor nunca lo recibe ni confía en él.
- * También filtra la carta con los chips de categoría ([data-filtro]).
+ * También filtra la carta con los chips de categoría ([data-filtro]); eso funciona aunque la página
+ * no tenga carrito (el chef ve la carta en solo lectura).
  */
 'use strict';
 

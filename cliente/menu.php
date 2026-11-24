@@ -3,7 +3,8 @@
  * Menú del cliente: la carta completa y el carrito para hacer un pedido.
  * GET: muestra los platos disponibles agrupados por sección, los chips para filtrar
  * y el carrito lateral (offcanvas de Bootstrap) que maneja assets/js/carrito.js.
- * POST (accion=pedir): recibe items[id_plato] = cantidad, los valida con crear_pedidos()
+ * El Chef también puede abrir la carta, pero solo para consultarla: sin botones "Añadir" ni carrito.
+ * POST (accion=pedir, solo Client): recibe items[id_plato] = cantidad, los valida con crear_pedidos()
  * y sigue el patrón PRG: guarda un mensaje flash y redirige (así recargar no repite el pedido).
  * El precio nunca viaja desde el navegador: el total que cuenta es el de la BD.
  */
@@ -12,11 +13,18 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/platos.php';
 require_once __DIR__ . '/../includes/pedidos.php';
 
-$usuario = requerir_rol(['Client']);
+$usuario = requerir_rol(['Client', 'Chef']);
+$puede_pedir = $usuario['role'] === 'Client'; // el chef solo ve la carta (spec §6 "Ver menú")
 
 // ---- POST: enviar el pedido a cocina ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verificar_csrf();
+
+    // La página es visible para el chef, pero pedir no: se comprueba en el servidor, no solo ocultando el botón
+    if (!$puede_pedir) {
+        flash('danger', 'Tu rol solo puede consultar la carta.');
+        redirigir('cliente/menu.php');
+    }
 
     if (($_POST['accion'] ?? '') === 'pedir') {
         // items[id] = cantidad -> [['dish_id' => id, 'quantity' => cantidad], ...]
@@ -48,14 +56,17 @@ $carta = array_filter($carta); // sin secciones vacías
 
 // Platos del cliente que todavía no se entregaron (para el aviso de la cabecera)
 $en_curso = 0;
-foreach (pedidos_de_cliente($usuario['id']) as $pedido) {
-    if ($pedido['status'] !== 'Served') {
-        $en_curso += (int) $pedido['quantity'];
+if ($puede_pedir) { // el chef no tiene pedidos propios
+    foreach (pedidos_de_cliente($usuario['id']) as $pedido) {
+        if ($pedido['status'] !== 'Served') {
+            $en_curso += (int) $pedido['quantity'];
+        }
     }
 }
 
 $titulo_pagina = 'La carta';
 $clase_body = 'rol-cliente pagina-menu';
+// carrito.js se carga también para el chef: sin carrito en la página solo activa los chips de filtro
 $scripts_pagina = ['assets/js/carrito.js'];
 require __DIR__ . '/../includes/header.php';
 ?>
@@ -63,7 +74,11 @@ require __DIR__ . '/../includes/header.php';
     <header class="menu-cabecera">
         <div class="titulo-seccion mb-0 anim-item">
             <h1>La carta de hoy</h1>
-            <p>Elige tus platos, revisa el pedido y envíalo a cocina. Desde ese momento puedes seguirlo paso a paso.</p>
+            <?php if ($puede_pedir): ?>
+                <p>Elige tus platos, revisa el pedido y envíalo a cocina. Desde ese momento puedes seguirlo paso a paso.</p>
+            <?php else: ?>
+                <p>Así ve la carta el cliente. Es solo de consulta: desde aquí no se hacen pedidos.</p>
+            <?php endif; ?>
         </div>
         <?php if ($en_curso > 0): ?>
             <a class="menu-en-curso anim-item" href="<?= e(url('cliente/mis_pedidos.php')) ?>">
@@ -95,7 +110,7 @@ require __DIR__ . '/../includes/header.php';
                     <?php foreach ($platos_seccion as $plato): ?>
                         <div class="col">
                             <?php
-                            $mostrar_boton = true; // botón "Añadir" con data-id, data-nombre y data-precio
+                            $mostrar_boton = $puede_pedir; // botón "Añadir" con data-id, data-nombre y data-precio
                             include __DIR__ . '/../includes/tarjeta_plato.php';
                             ?>
                         </div>
@@ -112,6 +127,7 @@ require __DIR__ . '/../includes/header.php';
     <?php endif; ?>
 </div>
 
+<?php if ($puede_pedir): ?>
 <!-- Botón flotante: abre el carrito y muestra cuántas unidades lleva -->
 <button type="button" class="btn btn-oro carrito-flotante" data-bs-toggle="offcanvas" data-bs-target="#carrito"
         aria-controls="carrito">
@@ -125,7 +141,7 @@ require __DIR__ . '/../includes/header.php';
 
 <!-- Carrito lateral. Es un formulario POST: carrito.js agrega los items[id]=cantidad antes de enviarlo -->
 <form class="offcanvas offcanvas-end carrito" id="carrito" tabindex="-1" aria-labelledby="carrito-titulo"
-      method="post" action="<?= e(url('cliente/menu.php')) ?>" data-carrito="<?= e(CLAVE_CARRITO_CLIENTE) ?>">
+      method="post" action="<?= e(url('cliente/menu.php')) ?>" data-carrito="<?= e(clave_carrito(CLAVE_CARRITO_CLIENTE, (int) $usuario['id'])) ?>">
     <?= campo_csrf() ?>
     <input type="hidden" name="accion" value="pedir">
     <div data-carrito-campos></div>
@@ -155,4 +171,5 @@ require __DIR__ . '/../includes/header.php';
         </button>
     </div>
 </form>
+<?php endif; ?>
 <?php require __DIR__ . '/../includes/footer.php'; ?>

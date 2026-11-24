@@ -29,7 +29,7 @@ $titulo_pagina = 'Mis pedidos';
 $clase_body = 'rol-cliente pagina-mis-pedidos';
 $scripts_pagina = ['assets/js/carrito.js'];
 if (($_GET['nuevo'] ?? '') === '1') {
-    $atributos_body = ['data-vaciar-carrito' => CLAVE_CARRITO_CLIENTE];
+    $atributos_body = ['data-vaciar-carrito' => clave_carrito(CLAVE_CARRITO_CLIENTE, (int) $usuario['id'])];
 }
 require __DIR__ . '/../includes/header.php';
 ?>

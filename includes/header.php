@@ -7,7 +7,7 @@
  *   $titulo_pagina  string  título de la pestaña (ej: 'Menú')
  *   $clase_body     string  clase del <body> para el layout de cada rol (ej: 'rol-chef')
  *   $sin_navbar     bool    true en login/registro: sin barra ni flash (la página los ubica ella misma)
- *   $atributos_body array   atributos extra del <body>, ej: ['data-vaciar-carrito' => 'ebano_carrito_cliente']
+ *   $atributos_body array   atributos extra del <body>, ej: ['data-vaciar-carrito' => 'ebano_carrito_cliente_4']
  * No inicia la sesión: auth.php ya lo hizo antes de llegar aquí.
  */
 

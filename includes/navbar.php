@@ -2,7 +2,7 @@
 /**
  * Barra de navegación. Lo incluye header.php.
  * Los enlaces cambian según el rol del usuario logueado (usuario_actual()):
- *   Cliente: Menú, Mis pedidos · Chef: Cocina · Camarero: Panel, Nuevo pedido
+ *   Cliente: Menú, Mis pedidos · Chef: Cocina, Carta · Camarero: Panel, Nuevo pedido
  *   Administrador: Panel, Platos, Usuarios, Pedidos · Visitante: Iniciar sesión y Crear cuenta.
  * El botón "Salir" es un formulario POST con token CSRF (un enlace GET podría dispararse desde otro sitio).
  */
@@ -17,6 +17,7 @@ $enlaces_por_rol = [
     ],
     'Chef' => [
         ['chef/cocina.php', 'Cocina', 'bi-fire'],
+        ['cliente/menu.php', 'Carta', 'bi-book'], // solo lectura para el chef
     ],
     'Waiter' => [
         ['camarero/dashboard.php', 'Panel', 'bi-grid'],
